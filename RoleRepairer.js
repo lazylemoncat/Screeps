@@ -5,7 +5,7 @@ var roleRepairer = {
     var targetContainer = creep.pos.findClosestByPath(FIND_STRUCTURES, 
       {filter: (structure) => {return (structure.structureType == STRUCTURE_CONTAINER
       && structure.store[RESOURCE_ENERGY] > 0)}});
-    const targetTo = creep.pos.findClosestByPath(FIND_STRUCTURES, {
+    var targetTo = creep.pos.findClosestByPath(FIND_STRUCTURES, {
       filter: object => object.hits < object.hitsMax});
     if (creep.store.getFreeCapacity() == creep.store.getCapacity()) {
       if (creep.withdraw(targetContainer, RESOURCE_ENERGY) == ERR_NOT_IN_RANGE) {

@@ -50,28 +50,33 @@ var newCreeps = {
             break;
           }
         }
-        Game.spawns['Spawn1'].spawnCreep([WORK, WORK, CARRY, MOVE], newName, {memory: {role: 'harvester', sourcesPosition: flag}});
+        Game.spawns['Spawn1'].spawnCreep([WORK, WORK, CARRY, MOVE], newName, {
+          memory: {role: 'harvester', sourcesPosition: flag}});
       }
     }
     // if upgrader less than 3, creat it
     else if (upgraders.length < 2) {
       var newName = 'Upgrader' + Game.time;
-      Game.spawns['Spawn1'].spawnCreep([WORK, CARRY, MOVE], newName, {memory: {role: 'upgrader'}});
+      Game.spawns['Spawn1'].spawnCreep([WORK, CARRY, MOVE], newName, {
+        memory: {role: 'upgrader'}});
     }
     // if builders less than 3, creat it
     else if (builders.length < 3) {
       var newName = 'Builder' + Game.time;
-        Game.spawns['Spawn1'].spawnCreep([WORK, CARRY, CARRY, CARRY, MOVE], newName, {memory: {role: 'builder'}});
+        Game.spawns['Spawn1'].spawnCreep([WORK, CARRY, CARRY, CARRY, MOVE], newName, {
+          memory: {role: 'builder'}});
     }
     // if transfers less than 3, creat it
     else if (transfers.length < sourcesLength) {
       var newName = 'Transfer' + Game.time;
-      Game.spawns['Spawn1'].spawnCreep([WORK, CARRY, MOVE], newName, {memory: {role: 'transfer'}});
+      Game.spawns['Spawn1'].spawnCreep([WORK, CARRY, MOVE], newName, {
+        memory: {role: 'transfer'}});
     }
     // if repairer less than 3, creat it
     else if (repairer.length < 2) {
       var newName = 'Repairer' + Game.time;
-      Game.spawns['Spawn1'].spawnCreep([WORK, CARRY, MOVE], newName, {memory: {role: 'repairer'}});
+      Game.spawns['Spawn1'].spawnCreep([WORK, CARRY, MOVE], newName, {
+        memory: {role: 'repairer'}});
     }
   }
 }

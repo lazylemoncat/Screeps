@@ -2,14 +2,8 @@ var myFind = require('./MyFind');
 
 var roleTransfer = {
   run: function(creep) {
-    var targetContainer = creep.pos.findClosestByPath(FIND_STRUCTURES, {
-      filter: (structure) => {return (structure.structureType == STRUCTURE_CONTAINER
-      && structure.store[RESOURCE_ENERGY] > 0)}});
-    var targetTo = creep.pos.findClosestByPath(FIND_STRUCTURES, {
-      filter: (structure) => {return (structure.structureType == STRUCTURE_EXTENSION ||
-      structure.structureType == STRUCTURE_SPAWN || 
-      structure.structureType == STRUCTURE_TOWER) &&
-      structure.store.getFreeCapacity(RESOURCE_ENERGY) > 0;}});
+    var targetContainer = myFind.creepFind("closestGetStore", creep);
+    var targetTo = myFind.creepFind("closestTransferTo", creep);
     var targetTower = creep.room.find(FIND_STRUCTURES, {
       filter : (structure) => {return (structure.structureType == STRUCTURE_TOWER) &&
       structure.store.getFreeCapacity(RESOURCE_ENERGY) > 0}});
