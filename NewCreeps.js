@@ -18,7 +18,7 @@ var newCreeps = {
 
     // if harvesters less than sources, create it
     var sourcesLength = Game.spawns['Spawn1'].room.find(FIND_SOURCES).length;
-    if (harvesters.length < sourcesLength) {
+    if (harvesters.length < sourcesLength * 2) {
       if (harvesters.length == 0) {
         var newName = 'Harvester' + Game.time;
         var flag1 = 0;
@@ -35,12 +35,21 @@ var newCreeps = {
       } else {
         var flag = -1;
         var newName = 'Harvester' + Game.time;
-        for (var i = 0; i < sourcesLength; ++i) {
-          var j = 0;
-          for (j = 0; j < harvesters.length; ++j) {
+        let sources = [];
+        for (let i = 0; i < sourcesLength; ++i) {
+          sources[i] = 0;
+        }
+        for (let i = 0; i < sourcesLength; ++i) {
+          for (let j = 0; j < harvesters.length; ++j) {
             if (harvesters[j].memory.sourcesPosition == i) {
-              flag = -1;
+              sources[i] += 1;
+              if (sources[i] == 2) {
+                flag = -1;
               break;
+              } else {
+                flag = i;
+                continue;
+              }
             } else {
               flag = i;
               continue;
@@ -69,11 +78,11 @@ var newCreeps = {
     // if transfers less than 3, creat it
     else if (transfers.length < sourcesLength) {
       var newName = 'Transfer' + Game.time;
-      Game.spawns['Spawn1'].spawnCreep([WORK, CARRY, MOVE], newName, {
+      Game.spawns['Spawn1'].spawnCreep([CARRY, CARRY, MOVE, MOVE, CARRY, MOVE], newName, {
         memory: {role: 'transfer'}});
     }
     // if repairer less than 3, creat it
-    else if (repairer.length < 2) {
+    else if (repairer.length < 1) {
       var newName = 'Repairer' + Game.time;
       Game.spawns['Spawn1'].spawnCreep([WORK, CARRY, MOVE], newName, {
         memory: {role: 'repairer'}});
