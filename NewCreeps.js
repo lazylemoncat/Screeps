@@ -1,93 +1,109 @@
-var myFind = require('./MyFind');
-
-var newCreeps = {
-  run: function(level) {
-
-    // delete dead creeps
-    for(var name in Memory.creeps) {
-      if(!Game.creeps[name]) {
-        delete Memory.creeps[name];
-      }
-  }
-
-    var harvesters = _.filter(Game.creeps, (creep) => creep.memory.role == 'harvester');
-    var builders = _.filter(Game.creeps, (creep) => creep.memory.role == 'builder');
-    var upgraders = _.filter(Game.creeps, (creep) => creep.memory.role == 'upgrader');
-    var transfers = _.filter(Game.creeps, (creep) => creep.memory.role == 'transfer');
-    var repairer = _.filter(Game.creeps, (creep) => creep.memory.role == 'repairer');
-
-    // if harvesters less than sources, create it
-    var sourcesLength = Game.spawns['Spawn1'].room.find(FIND_SOURCES).length;
-    if (harvesters.length < sourcesLength * 2) {
-      if (harvesters.length == 0) {
-        var newName = 'Harvester' + Game.time;
-        var flag1 = 0;
-        for (var i = 0; i < sourcesLength; ++i) {
-          if (Game.spawns['Spawn1'].room.find(FIND_SOURCES)[i] == 
-            myFind.spawnFind("closestSource", "Spawn1")) {
-            flag1 = i;
-            break;
-          }
-        }
-        ;
-        Game.spawns['Spawn1'].spawnCreep([WORK, WORK, CARRY, MOVE], newName, {
-          memory: {role: 'harvester', sourcesPosition: flag1}});
-      } else {
-        var flag = -1;
-        var newName = 'Harvester' + Game.time;
-        let sources = [];
-        for (let i = 0; i < sourcesLength; ++i) {
-          sources[i] = 0;
-        }
-        for (let i = 0; i < sourcesLength; ++i) {
-          for (let j = 0; j < harvesters.length; ++j) {
-            if (harvesters[j].memory.sourcesPosition == i) {
-              sources[i] += 1;
-              if (sources[i] == 2) {
-                flag = -1;
-              break;
-              } else {
-                flag = i;
-                continue;
-              }
-            } else {
-              flag = i;
-              continue;
-            }
-          }
-          if (flag != -1) {
-            break;
-          }
-        }
-        Game.spawns['Spawn1'].spawnCreep([WORK, WORK, CARRY, MOVE], newName, {
-          memory: {role: 'harvester', sourcesPosition: flag}});
-      }
+let newCreeps = {
+  run: function() {
+    // delete dead creeps's memory
+    deleteDead();
+    // if harvesters less than sources*3, create it
+    let harvesters = _.filter(Game.creeps, (creep) => creep.memory.role == 'harvester');
+    let sourcesLength = Game.spawns['Spawn1'].room.find(FIND_SOURCES).length;
+    if (harvesters.length < sourcesLength * 3) {
+      newHarvester(harvesters, sourcesLength);
+      return;
     }
     // if upgrader less than 3, creat it
-    else if (upgraders.length < 2) {
-      var newName = 'Upgrader' + Game.time;
-      Game.spawns['Spawn1'].spawnCreep([WORK, CARRY, MOVE], newName, {
-        memory: {role: 'upgrader'}});
+    let upgraders = _.filter(Game.creeps, (creep) => creep.memory.role == 'upgrader');
+    if (upgraders.length < 2) {
+      newUpgrader();
+      return;
     }
     // if builders less than 3, creat it
-    else if (builders.length < 3) {
-      var newName = 'Builder' + Game.time;
-        Game.spawns['Spawn1'].spawnCreep([WORK, CARRY, CARRY, CARRY, MOVE], newName, {
-          memory: {role: 'builder'}});
+    let builders = _.filter(Game.creeps, (creep) => creep.memory.role == 'builder');
+    if (builders.length < 3) {
+      newBuilder();
+      return;
     }
-    // if transfers less than 3, creat it
-    else if (transfers.length < sourcesLength) {
-      var newName = 'Transfer' + Game.time;
-      Game.spawns['Spawn1'].spawnCreep([CARRY, CARRY, MOVE, MOVE, CARRY, MOVE], newName, {
-        memory: {role: 'transfer'}});
+    // if transfers less than sources's length, creat it
+    let transfers = _.filter(Game.creeps, (creep) => creep.memory.role == 'transfer');
+    if (transfers.length < sourcesLength) {
+      newTransfer();
+      return;
     }
     // if repairer less than 3, creat it
-    else if (repairer.length < 1) {
-      var newName = 'Repairer' + Game.time;
-      Game.spawns['Spawn1'].spawnCreep([WORK, CARRY, MOVE], newName, {
-        memory: {role: 'repairer'}});
+    let repairer = _.filter(Game.creeps, (creep) => creep.memory.role == 'repairer');
+    if (repairer.length < 1) {
+      newRepairer();
+      return; 
     }
   }
 }
 
 module.exports = newCreeps;
+
+function deleteDead () {
+  // delete dead creeps
+  for(let name in Memory.creeps) {
+    if(!Game.creeps[name]) {
+      delete Memory.creeps[name];
+    }
+  }
+}
+
+function newHarvester(harvesters, sourcesLength) {
+  let posFlag = 0;
+  let newName = 'Harvester' + Game.time;
+
+  if (harvesters.length == 0) {
+    let targetSource = Game.spawns["Spawn1"].pos.findClosestByPath(FIND_SOURCES);
+    for (let i = 0; i < sourcesLength; ++i) {
+      if (Game.spawns['Spawn1'].room.find(FIND_SOURCES)[i] == targetSource) {
+        posFlag = i;
+        break;
+      }
+    }  
+  } else {
+    let flag = -1;
+    let sources = [];
+    for (let i = 0; i < sourcesLength; ++i) {
+      sources[i] = 0;
+    }
+    for (let i = 0; i < sourcesLength; ++i) {
+      for (let j = 0; j < harvesters.length; ++j) {
+        if (harvesters[j].memory.sourcesPosition == i && ++sources[i] == 3) {
+          flag = -1;
+        } else {
+          flag = i;
+          continue;
+        }
+      }
+      if (flag != -1) {
+        posFlag = flag;
+        break;
+      }
+    }
+  }
+  Game.spawns['Spawn1'].spawnCreep([WORK, WORK, CARRY, MOVE], newName, {
+    memory: {role: 'harvester', sourcesPosition: posFlag}});
+}
+
+function newUpgrader() {
+  let newName = 'Upgrader' + Game.time;
+  Game.spawns['Spawn1'].spawnCreep([WORK, CARRY, MOVE], newName, {
+    memory: {role: 'upgrader'}});
+}
+
+function newBuilder() {
+  let newName = 'Builder' + Game.time;
+  Game.spawns['Spawn1'].spawnCreep([WORK, CARRY, CARRY, CARRY, MOVE], newName, {
+    memory: {role: 'builder'}});
+}
+
+function newTransfer() {
+  let newName = 'Transfer' + Game.time;
+  Game.spawns['Spawn1'].spawnCreep([CARRY, CARRY, MOVE, MOVE, CARRY, MOVE], newName, {
+    memory: {role: 'transfer'}});
+}
+
+function newRepairer() {
+  let newName = 'Repairer' + Game.time;
+  Game.spawns['Spawn1'].spawnCreep([WORK, CARRY, MOVE], newName, {
+    memory: {role: 'repairer'}});
+}
