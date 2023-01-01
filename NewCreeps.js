@@ -48,35 +48,35 @@ function deleteDead () {
 }
 
 function newHarvester(harvesters, sourcesLength) {
-  let posFlag = 0;
   let newName = 'Harvester' + Game.time;
-
-  if (harvesters.length == 0) {
-    let targetSource = Game.spawns["Spawn1"].pos.findClosestByPath(FIND_SOURCES);
-    for (let i = 0; i < sourcesLength; ++i) {
-      if (Game.spawns['Spawn1'].room.find(FIND_SOURCES)[i] == targetSource) {
-        posFlag = i;
-        break;
-      }
-    }  
-  } else {
-    let flag = -1;
-    let sources = [];
-    for (let i = 0; i < sourcesLength; ++i) {
-      sources[i] = 0;
+  let closestSource = Game.spawns["Spawn1"].pos.findClosestByPath(FIND_SOURCES);
+  let flag = -1;
+  let sources = [];
+  for (let i = 0; i < sourcesLength; ++i) {
+    sources[i] = 0;
+  }
+  for (let i = 0; i < sourcesLength; ++i) {
+    if (closestSource == Game.spawns["Spawn1"].room.find(FIND_SOURCES)[i]) {
+      closestSource = i;
+      break;
     }
-    for (let i = 0; i < sourcesLength; ++i) {
-      for (let j = 0; j < harvesters.length; ++j) {
-        if (harvesters[j].memory.sourcesPosition == i && ++sources[i] == 3) {
-          flag = -1;
-        } else {
-          flag = i;
-          continue;
-        }
+  }
+  let posFlag = closestSource;
+  for (let i = 0; i < sourcesLength; ++i) {
+    for (let j = 0; j < harvesters.length; ++j) {
+      if (harvesters[j].memory.sourcesPosition == i && ++sources[i] == 3) {
+        flag = -1;
+      } else {
+        flag = i;
+        continue;
       }
-      if (flag != -1) {
-        posFlag = flag;
+    }
+    if (flag != -1) {
+      posFlag = flag;
+      if (posFlag == closestSource) {
         break;
+      } else {
+        continue
       }
     }
   }

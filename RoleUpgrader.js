@@ -1,37 +1,34 @@
-var myFind = require('./MyFind');
-
-var roleUpgrader = {
-
-  /** @param {Creep} creep **/
+let roleUpgrader = {
   run: function(creep) {
-
-    var targetContainer = myFind.creepFind("closestGetStore", creep);
-    
     if(creep.memory.upgrading && creep.store[RESOURCE_ENERGY] == 0) {
       creep.memory.upgrading = false;
-      creep.say('harvest');
+      goGetEnergy(creep);
     }
-    if(!creep.memory.upgrading && creep.store.getFreeCapacity() == 0) {
+    else if(!creep.memory.upgrading && creep.store.getFreeCapacity() == 0) {
       creep.memory.upgrading = true;
-      creep.say('upgrade');
-    }
-
-    if(creep.memory.upgrading) {
-      if(creep.upgradeController(creep.room.controller) == ERR_NOT_IN_RANGE) {
-        creep.moveTo(creep.room.controller);
-      }
-    }
-    else {
-      if (targetContainer == creep.pos.findClosestByPath(FIND_SOURCES)) {
-        if (creep.harvest(targetContainer) == ERR_NOT_IN_RANGE) {
-          creep.moveTo(targetContainer);
-        }
-      }
-      else if (creep.withdraw(targetContainer, RESOURCE_ENERGY) == ERR_NOT_IN_RANGE) {
-        creep.moveTo(targetContainer);
-      }
+      goUpgrade(creep);
     }
 	}
 };
 
 module.exports = roleUpgrader;
+
+function goUpgrade(creep) {
+  if(creep.upgradeController(creep.room.controller) == ERR_NOT_IN_RANGE) {
+    creep.moveTo(creep.room.controller);
+  }
+}
+
+function goGetEnergy(creep) {
+  let target = creep.pos.findClosestByPath(FIND_STRUCTURES, {filter :
+    (structure) => structure.structureType == STRUCTURE_CONTAINER});
+  
+  if (target == undefined) {
+    target = creep.pos.findClosestByPath(FIND_SOURCES);
+    if (creep.harvest(target) == ERR_NOT_IN_RANGE) {
+      creep.moveTo(target);
+    }
+  } else if (creep.withdraw(target, RESOURCE_ENERGY) == ERR_NOT_IN_RANGE) {
+    creep.moveTo(target);
+  }
+}

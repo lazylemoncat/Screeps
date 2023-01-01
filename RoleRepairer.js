@@ -1,4 +1,4 @@
-var roleRepairer = {
+let roleRepairer = {
   run: function(creep) {
     if(creep.memory.repairing && creep.store[RESOURCE_ENERGY] == 0) {
       creep.memory.repairing = false;
