@@ -2,11 +2,15 @@ let roleUpgrader = {
   run: function(creep) {
     if(creep.memory.upgrading && creep.store[RESOURCE_ENERGY] == 0) {
       creep.memory.upgrading = false;
-      goGetEnergy(creep);
     }
-    else if(!creep.memory.upgrading && creep.store.getFreeCapacity() == 0) {
+    if(!creep.memory.upgrading && creep.store.getFreeCapacity() == 0) {
       creep.memory.upgrading = true;
+    }
+
+    if(creep.memory.upgrading) {
       goUpgrade(creep);
+    } else {
+      goGetEnergy(creep);
     }
 	}
 };
