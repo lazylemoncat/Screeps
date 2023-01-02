@@ -5,7 +5,7 @@ let roleTransfer = require('./RoleTransfer');
 let roleRepairer = require('./RoleRepairer');
 let roleAttacker = require('./RoleAttacker');
 let roleHealer = require('./RoleHealer');
-let tower = require('./Tower');
+let structureTower = require('./StructureTower');
 let newCreeps = require('./NewCreeps');
 
 module.exports.loop = function () {
@@ -43,7 +43,7 @@ module.exports.loop = function () {
   for (let name in Game.structures) {
     let structure = Game.structures[name];
     if (structure.structureType == STRUCTURE_TOWER) {
-      tower.run(structure);
+      structureTower.run(structure);
     }
   }
 }

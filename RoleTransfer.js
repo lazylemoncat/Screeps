@@ -23,8 +23,8 @@ function goTransfer(creep) {
     structure.store.getFreeCapacity(RESOURCE_ENERGY) > 0}});
 
   if (target[0] != undefined) {
-    if (creep.transfer(targetTower[0], RESOURCE_ENERGY) == ERR_NOT_IN_RANGE) {
-      creep.moveTo(targetTower[0]);
+    if (creep.transfer(target[0], RESOURCE_ENERGY) == ERR_NOT_IN_RANGE) {
+      creep.moveTo(target[0]);
     }
   } else {
     target = creep.pos.findClosestByPath(FIND_STRUCTURES, {

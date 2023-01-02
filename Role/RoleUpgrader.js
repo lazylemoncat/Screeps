@@ -25,8 +25,7 @@ function goUpgrade(creep) {
 
 function goGetEnergy(creep) {
   let target = creep.pos.findClosestByPath(FIND_STRUCTURES, {filter :
-    (structure) => structure.structureType == STRUCTURE_CONTAINER &&
-    structure.store[RESOURCE_ENERGY] > 0});
+    (structure) => structure.structureType == STRUCTURE_CONTAINER});
   
   if (target == undefined) {
     target = creep.pos.findClosestByPath(FIND_SOURCES);
