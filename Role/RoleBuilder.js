@@ -33,15 +33,18 @@ function goBuild(creep) {
 }
 
 function goGetEnergy(creep) {
-  let arr1 = creep.room.find(FIND_SOURCES);
-  let targetContainer = creep.pos.findClosestByPath(FIND_STRUCTURES, 
-    {filter: (structure) => {
-    return (structure.structureType == STRUCTURE_CONTAINER &&
-    structure.store[RESOURCE_ENERGY] > 0)}});
-  if (targetContainer != null) {
-    arr1.push(targetContainer);
+  let targetSource;
+  let arr1 = creep.room.find(FIND_SOURCES, {filter :
+    (sources) => sources.energy > 0});
+  let targetStore = creep.pos.findClosestByPath(FIND_STRUCTURES, 
+    {filter: (structure) => {return (structure.structureType == STRUCTURE_CONTAINER ||
+    structure.structureType == STRUCTURE_STORAGE) &&
+    structure.store[RESOURCE_ENERGY] > 0}});
+  if (targetStore != null) {
+    targetSource = targetStore;
+  } else {
+    targetSource = creep.pos.findClosestByPath(arr1);
   }
-  let targetSource = creep.pos.findClosestByPath(arr1);
   if (creep.withdraw(targetSource, RESOURCE_ENERGY) == ERR_NOT_IN_RANGE) {
     creep.moveTo(targetSource);
   }

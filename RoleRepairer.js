@@ -26,8 +26,9 @@ function goRepair(creep) {
 
 function goGetEnergy(creep) {
   let targetEnergy = creep.pos.findClosestByPath(FIND_STRUCTURES, 
-    {filter: (structure) => {return (structure.structureType == STRUCTURE_CONTAINER
-    && structure.store[RESOURCE_ENERGY] > 0)}});
+    {filter: (structure) => {return (structure.structureType == STRUCTURE_CONTAINER ||
+    structure.structureType == STRUCTURE_STORAGE)
+    && structure.store[RESOURCE_ENERGY] > 0}});
   if (targetEnergy == null) {
     targetEnergy = creep.pos.findClosestByPath(FIND_SOURCES);
     if(creep.harvest(targetEnergy) == ERR_NOT_IN_RANGE) {

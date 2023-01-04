@@ -1,4 +1,4 @@
-let tower = {
+let structureTower = {
   run: function (tower) {
     let enemy = tower.room.find(FIND_HOSTILE_CREEPS);
     if (enemy[0] != undefined) {
@@ -8,7 +8,7 @@ let tower = {
   }
 };
 
-module.exports = tower;
+module.exports = structureTower;
 
 function goAttack(tower, enemy) {
   let target = tower.pos.findClosestByPath(enemy);

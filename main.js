@@ -9,9 +9,6 @@ let structureTower = require('./StructureTower');
 let newCreeps = require('./NewCreeps');
 
 module.exports.loop = function () {
-
-  // get room's controller level
-  // var level = Game.spawns["Spawn1"].room.controller.level
   // create new creeps
   newCreeps.run();
 
