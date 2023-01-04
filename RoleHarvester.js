@@ -20,10 +20,6 @@ function backRoom(creep) {
 
 function goHarvest(creep) {
   let targetSource = creep.room.find(FIND_SOURCES)[creep.memory.sourcesPosition];
-  if (targetSource.energy == 0) {
-    targetSource = creep.pos.findClosestByPath(FIND_SOURCES, {filter :
-    (sources) => sources.energy > 0})
-  }
   if(creep.harvest(targetSource) == ERR_NOT_IN_RANGE) {
     creep.moveTo(targetSource);
   }

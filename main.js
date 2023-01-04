@@ -11,7 +11,7 @@ let newCreeps = require('./NewCreeps');
 module.exports.loop = function () {
   // create new creeps
   newCreeps.run();
-
+  // run creeps
   for (let name in Game.creeps) {
     let creep = Game.creeps[name];
     if (creep.memory.role == 'harvester') {
@@ -36,7 +36,7 @@ module.exports.loop = function () {
       roleHealer.run(creep);
     }
   }
-  
+  // run structures
   for (let name in Game.structures) {
     let structure = Game.structures[name];
     if (structure.structureType == STRUCTURE_TOWER) {

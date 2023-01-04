@@ -5,29 +5,30 @@ let newCreeps = {
     // if harvesters less than sources*3, create it
     let harvesters = _.filter(Game.creeps, (creep) => creep.memory.role == 'harvester');
     let sourcesLength = Game.spawns['Spawn1'].room.find(FIND_SOURCES).length;
+
     if (harvesters.length < sourcesLength * 3) {
       newHarvester(harvesters, sourcesLength);
       return;
     }
-    // if upgrader less than 3, creat it
+    // if upgrader less than 1, creat it
     let upgraders = _.filter(Game.creeps, (creep) => creep.memory.role == 'upgrader');
     if (upgraders.length < 1) {
       newUpgrader();
       return;
     }
-    // if builders less than 3, creat it
+    // if builders less than 1, creat it
     let builders = _.filter(Game.creeps, (creep) => creep.memory.role == 'builder');
-    if (builders.length < 1) {
+    if (builders.length < 2) {
       newBuilder();
       return;
     }
     // if transfers less than sources's length, creat it
     let transfers = _.filter(Game.creeps, (creep) => creep.memory.role == 'transfer');
-    if (transfers.length < sourcesLength) {
+    if (transfers.length < 1) {
       newTransfer();
       return;
     }
-    // if repairer less than 3, creat it
+    // if repairer less than 1, creat it
     let repairer = _.filter(Game.creeps, (creep) => creep.memory.role == 'repairer');
     if (repairer.length < 1) {
       newRepairer();
@@ -44,6 +45,38 @@ function newCreepBody(role) {
   if (capacity == 300) {
     switch (role) {
       case 'harvester' : return [WORK, CARRY, MOVE, MOVE];
+      case 'upgrader' : return [WORK, CARRY, MOVE, MOVE];
+      case 'builder' : return [WORK, CARRY, MOVE, MOVE];
+      case 'transfer' : return [CARRY, CARRY, CARRY, MOVE, MOVE, MOVE];
+      case 'repairer' : return [WORK, CARRY, MOVE, MOVE];
+    }
+  } else {
+    switch (role) {
+      case 'harvester' : {
+        let harvesters = _.filter(Game.creeps, (creep) => creep.memory.role == 'harvester');
+        if (harvesters < 3) {
+          return [WORK, CARRY, MOVE, MOVE];
+        }
+        let bodys = [];
+        let moves = 0;
+        capacity /= 50;
+        bodys.push(CARRY);
+        capacity -= 1;
+        for (let i = bodys.length; capacity > 2; ++i) {
+          bodys.push(WORK);
+          capacity -= 2;
+          // console.log(moves);
+          if (bodys.length - moves == (moves + 1) * 2) {
+            bodys.push(MOVE);
+            ++moves;
+            capacity -= 1;
+            if (capacity - 3 < 0) {
+              break;
+            }
+          }
+        }
+        return bodys;
+      }
       case 'upgrader' : return [WORK, CARRY, MOVE, MOVE];
       case 'builder' : return [WORK, CARRY, MOVE, MOVE];
       case 'transfer' : return [CARRY, CARRY, CARRY, MOVE, MOVE, MOVE];
@@ -75,10 +108,8 @@ function newHarvester(harvesters, sourcesLength) {
     }
   }
   let posFlag = closestSource;
-  console.log(harvesters);
   for (let i = 0; i < harvesters.length; ++i) {
     ++sources[harvesters[i].memory.sourcesPosition];
-    console.log(harvesters[i].memory.sourcesPosition);
   }
   if (sources[posFlag] >= 3) {
     for (let i = 0; i < sources.length; ++i) {
@@ -88,8 +119,6 @@ function newHarvester(harvesters, sourcesLength) {
       }
     }
   }
-  console.log("posFlag = " + posFlag);
-  console.log(sources);
   Game.spawns['Spawn1'].spawnCreep(newCreepBody('harvester'), newName, {
     memory: {role: 'harvester', sourcesPosition: posFlag}});
 }
