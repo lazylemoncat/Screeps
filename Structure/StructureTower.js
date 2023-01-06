@@ -8,7 +8,7 @@ let structureTower = {
     } else if (injured[0] != undefined) {
       tower.heal(injured[0]);
     } else {
-      // runRepair(tower);
+      runRepair(tower);
     }
   }
 };

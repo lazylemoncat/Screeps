@@ -7,6 +7,7 @@ let roleTransfer = {
       creep.memory.transfering = true;
     }
 
+    backRoom(creep);
     if (creep.memory.transfering) {
       goTransfer(creep);
     } else {
@@ -17,9 +18,16 @@ let roleTransfer = {
 
 module.exports = roleTransfer;
 
+function backRoom(creep) {
+  if (creep.room != Game.spawns["Spawn1"].room) {
+    creep.moveTo(Game.spawns["Spawn1"]);
+  }
+}
+
 function goTransfer(creep) {
   let target = creep.pos.findClosestByPath(FIND_STRUCTURES, {filter : 
-    (structure) => {return (structure.structureType == STRUCTURE_EXTENSION) &&
+    (structure) => {return (structure.structureType == STRUCTURE_EXTENSION ||
+    structure.structureType == STRUCTURE_SPAWN) &&
     structure.store.getFreeCapacity(RESOURCE_ENERGY) > 0}});
   if (target != null) {
     if (creep.transfer(target, RESOURCE_ENERGY) == ERR_NOT_IN_RANGE) {
@@ -41,7 +49,8 @@ function goTransfer(creep) {
   target = creep.pos.findClosestByPath(FIND_STRUCTURES, {
     filter: (structure) => {return (structure.structureType == STRUCTURE_EXTENSION ||
     structure.structureType == STRUCTURE_SPAWN ||
-    structure.structureType == STRUCTURE_TOWER)
+    structure.structureType == STRUCTURE_TOWER ||
+    structure.structureType == STRUCTURE_STORAGE)
     && structure.store.getFreeCapacity(RESOURCE_ENERGY) > 0;
     }
   });
@@ -51,11 +60,16 @@ function goTransfer(creep) {
 }
 
 function goWithdraw(creep) {
-  let targetContainer = creep.pos.findClosestByPath(FIND_STRUCTURES, {filter:
-    (structure) => (structure.structureType == STRUCTURE_CONTAINER ||
-    structure.structureType == STRUCTURE_STORAGE)&&
-    structure.store[RESOURCE_ENERGY] > 0
-  });
+  let targetSource = creep.room.find(FIND_SOURCES)[creep.memory.sourcesPosition];
+  let targetContainer = targetSource.pos.findClosestByPath(FIND_STRUCTURES, {filter:
+    (structure) => (structure.structureType == STRUCTURE_CONTAINER)});
+  if (targetContainer.store[RESOURCE_ENERGY] == 0) {
+    targetContainer = creep.pos.findClosestByPath(FIND_STRUCTURES, {filter:
+      (structure) => (structure.structureType == STRUCTURE_CONTAINER ||
+      structure.structureType == STRUCTURE_STORAGE)&&
+      structure.store[RESOURCE_ENERGY] > 0
+    });
+  }
   if (creep.withdraw(targetContainer, RESOURCE_ENERGY) == ERR_NOT_IN_RANGE) {
     creep.moveTo(targetContainer);
   }

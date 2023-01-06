@@ -24,8 +24,8 @@ let newCreeps = {
     }
     // if transfers less than sources's length, creat it
     let transfers = _.filter(Game.creeps, (creep) => creep.memory.role == 'transfer');
-    if (transfers.length < 1) {
-      newTransfer();
+    if (transfers.length < sourcesLength) {
+      newTransfer(transfers, sourcesLength);
       return;
     }
     // if repairer less than 1, creat it
@@ -53,8 +53,7 @@ function newCreepBody(role) {
   } else {
     switch (role) {
       case 'harvester' : {
-        let harvesters = _.filter(Game.creeps, (creep) => creep.memory.role == 'harvester');
-        if (harvesters < 3) {
+        if (Object.getOwnPropertyNames(Memory.creeps).length < 10) {
           return [WORK, CARRY, MOVE, MOVE];
         }
         let bodys = [];
@@ -135,10 +134,30 @@ function newBuilder() {
     memory: {role: 'builder'}});
 }
 
-function newTransfer() {
+function newTransfer(transfer, sourcesLength) {
   let newName = 'Transfer' + Game.time;
+  let posFlag = 0;
+  let closestSource = Game.spawns["Spawn1"].pos.findClosestByPath(FIND_SOURCES);
+  if (transfer.length == 0) {
+    for (let i = 0; i < sourcesLength; ++i) {
+      if (closestSource == Game.spawns["Spawn1"].room.find(FIND_SOURCES)[i]) {
+        closestSource = i;
+        break;
+      }
+    }
+    posFlag = closestSource;
+  } else {
+    for (let i = 0; i < sourcesLength; ++i) {
+      for (let j = 0; j < transfer.length; ++j) {
+        if (transfer[j].memory.sourcesPosition != i) {
+          posFlag = i;
+          break;
+        }
+      }
+    }
+  }
   Game.spawns['Spawn1'].spawnCreep(newCreepBody('transfer'), newName, {
-    memory: {role: 'transfer'}});
+    memory: {role: 'transfer', sourcesPosition: posFlag}});
 }
 
 function newRepairer() {

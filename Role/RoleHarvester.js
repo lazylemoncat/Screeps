@@ -1,10 +1,10 @@
 let roleHarvester = {
   run: function(creep) {
-    backRoom(creep);
     // if harvester's free capacity more than 0, harvest energy
     if(creep.store.getFreeCapacity() > 0) {
       goHarvest(creep);
     } else {
+      backRoom(creep);
       transferEnergy(creep);
     }
 	}
