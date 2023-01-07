@@ -7,7 +7,9 @@ let roleTransfer = {
       creep.memory.transfering = true;
     }
 
-    backRoom(creep);
+    if (backRoom(creep) == 0) {
+      return;
+    }
     if (creep.memory.transfering) {
       goTransfer(creep);
     } else {
@@ -21,8 +23,12 @@ module.exports = roleTransfer;
 function backRoom(creep) {
   if (creep.room != Game.spawns["Spawn1"].room) {
     creep.moveTo(Game.spawns["Spawn1"]);
+    return 0;
+  } else {
+    return -1;
   }
 }
+
 
 function goTransfer(creep) {
   let target = creep.pos.findClosestByPath(FIND_STRUCTURES, {filter : 
@@ -63,7 +69,7 @@ function goWithdraw(creep) {
   let targetSource = creep.room.find(FIND_SOURCES)[creep.memory.sourcesPosition];
   let targetContainer = targetSource.pos.findClosestByPath(FIND_STRUCTURES, {filter:
     (structure) => (structure.structureType == STRUCTURE_CONTAINER)});
-  if (targetContainer.store[RESOURCE_ENERGY] == 0) {
+  if (targetContainer == null || targetContainer.store[RESOURCE_ENERGY] == 0) {
     targetContainer = creep.pos.findClosestByPath(FIND_STRUCTURES, {filter:
       (structure) => (structure.structureType == STRUCTURE_CONTAINER ||
       structure.structureType == STRUCTURE_STORAGE)&&

@@ -8,6 +8,7 @@ let roleRepairer = {
 
     if (creep.memory.repairing) {
       goRepair(creep);
+      backRoom(creep);
     } else {
       goGetEnergy(creep);
     }
@@ -16,9 +17,16 @@ let roleRepairer = {
 
 module.exports = roleRepairer;
 
+function backRoom(creep) {
+  if (creep.room != Game.spawns["Spawn1"].room) {
+    creep.moveTo(Game.spawns["Spawn1"]);
+  }
+}
+
 function goRepair(creep) {
   let targetTo = creep.pos.findClosestByPath(FIND_STRUCTURES, {
-    filter: object => object.hits < object.hitsMax});
+    filter: object => object.hits < object.hitsMax &&
+    object.structureType != STRUCTURE_WALL});
   if (creep.repair(targetTo) == ERR_NOT_IN_RANGE) {
     creep.moveTo(targetTo);
   }

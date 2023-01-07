@@ -2,24 +2,24 @@ let newCreeps = {
   run: function() {
     // delete dead creeps's memory
     deleteDead();
-    // if harvesters less than sources*3, create it
+    // if harvesters less than sources*1, create it
     let harvesters = _.filter(Game.creeps, (creep) => creep.memory.role == 'harvester');
     let sourcesLength = Game.spawns['Spawn1'].room.find(FIND_SOURCES).length;
 
-    if (harvesters.length < sourcesLength * 3) {
+    if (harvesters.length < sourcesLength * 2) {
       newHarvester(harvesters, sourcesLength);
+      return;
+    }
+    // if builders less than 1, creat it
+    let builders = _.filter(Game.creeps, (creep) => creep.memory.role == 'builder');
+    if (builders.length < 1) {
+      newBuilder();
       return;
     }
     // if upgrader less than 1, creat it
     let upgraders = _.filter(Game.creeps, (creep) => creep.memory.role == 'upgrader');
     if (upgraders.length < 1) {
       newUpgrader();
-      return;
-    }
-    // if builders less than 1, creat it
-    let builders = _.filter(Game.creeps, (creep) => creep.memory.role == 'builder');
-    if (builders.length < 2) {
-      newBuilder();
       return;
     }
     // if transfers less than sources's length, creat it
@@ -53,32 +53,30 @@ function newCreepBody(role) {
   } else {
     switch (role) {
       case 'harvester' : {
-        if (Object.getOwnPropertyNames(Memory.creeps).length < 10) {
+        if (Object.getOwnPropertyNames(Memory.creeps).length < 8) {
           return [WORK, CARRY, MOVE, MOVE];
         }
         let bodys = [];
-        let moves = 0;
         capacity /= 50;
-        bodys.push(CARRY);
-        capacity -= 1;
-        for (let i = bodys.length; capacity > 2; ++i) {
-          bodys.push(WORK);
-          capacity -= 2;
-          // console.log(moves);
-          if (bodys.length - moves == (moves + 1) * 2) {
-            bodys.push(MOVE);
-            ++moves;
-            capacity -= 1;
-            if (capacity - 3 < 0) {
-              break;
-            }
-          }
+        bodys.push(CARRY, WORK, MOVE);
+        capacity -= 4;
+        for (; capacity >= 3; capacity -= 3) {
+          bodys.push(WORK, MOVE);
         }
         return bodys;
       }
       case 'upgrader' : return [WORK, CARRY, MOVE, MOVE];
       case 'builder' : return [WORK, CARRY, MOVE, MOVE];
-      case 'transfer' : return [CARRY, CARRY, CARRY, MOVE, MOVE, MOVE];
+      case 'transfer' : {
+        if (Object.getOwnPropertyNames(Memory.creeps).length < 8) {
+          return [CARRY, CARRY, CARRY, MOVE, MOVE, MOVE];
+        }
+        let bodys = [];
+        for (capacity /= 50; capacity >= 2; capacity -= 2) {
+          bodys.push(MOVE, CARRY);
+        }
+        return bodys;
+      }
       case 'repairer' : return [WORK, CARRY, MOVE, MOVE];
     }
   }
@@ -110,9 +108,9 @@ function newHarvester(harvesters, sourcesLength) {
   for (let i = 0; i < harvesters.length; ++i) {
     ++sources[harvesters[i].memory.sourcesPosition];
   }
-  if (sources[posFlag] >= 3) {
+  if (sources[posFlag] >= 2) {
     for (let i = 0; i < sources.length; ++i) {
-      if (sources[i] < 3) {
+      if (sources[i] < 2) {
         posFlag = i;
         break;
       }
