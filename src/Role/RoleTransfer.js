@@ -29,10 +29,15 @@ function backRoom(creep) {
 
 
 function goTransfer(creep) {
-  let target = creep.room.find(FIND_STRUCTURES, {filter : 
-    (structure) => {return (structure.structureType == STRUCTURE_EXTENSION ||
+  // let target = creep.room.find(FIND_STRUCTURES, {filter : 
+  //   (structure) => {return (structure.structureType == STRUCTURE_EXTENSION ||
+  //   structure.structureType == STRUCTURE_SPAWN) &&
+  //   structure.store.getFreeCapacity(RESOURCE_ENERGY) > 0}});
+  let structures = creep.room.find(FIND_STRUCTURES);
+  let target = structures.map(structure => 
+    (structure.structureType == STRUCTURE_EXTENSION ||
     structure.structureType == STRUCTURE_SPAWN) &&
-    structure.store.getFreeCapacity(RESOURCE_ENERGY) > 0}});
+    structure.store.getFreeCapacity(RESOURCE_ENERGY) > 0 );
   if (target[0] != undefined) {
     if (creep.transfer(target[0], RESOURCE_ENERGY) == ERR_NOT_IN_RANGE) {
       creep.moveTo(target[0]);
@@ -40,9 +45,12 @@ function goTransfer(creep) {
     return;
   }
 
-  target = creep.room.find(FIND_STRUCTURES, {
-    filter : (structure) => {return (structure.structureType == STRUCTURE_TOWER) &&
-    structure.store.getFreeCapacity(RESOURCE_ENERGY) > 0}});
+  // target = creep.room.find(FIND_STRUCTURES, {
+  //   filter : (structure) => {return (structure.structureType == STRUCTURE_TOWER) &&
+  //   structure.store.getFreeCapacity(RESOURCE_ENERGY) > 0}});
+  target = structures.map(structure => 
+    (structure.structureType == STRUCTURE_TOWER) &&
+    structure.store.getFreeCapacity(RESOURCE_ENERGY) > 0);
   if (target[0] != undefined) {
     if (creep.transfer(target[0], RESOURCE_ENERGY) == ERR_NOT_IN_RANGE) {
       creep.moveTo(target[0]);
@@ -50,14 +58,19 @@ function goTransfer(creep) {
     return;
   }
 
-  target = creep.room.find(FIND_STRUCTURES, {
-    filter: (structure) => {return (
-    (structure.structureType == STRUCTURE_CONTAINER && 
+  // target = creep.room.find(FIND_STRUCTURES, {
+  //   filter: (structure) => {return (
+  //   (structure.structureType == STRUCTURE_CONTAINER && 
+  //   structure.pos.isNearTo(structure.pos.findClosestByPath(FIND_SOURCES)) == false) ||
+  //   structure.structureType == STRUCTURE_STORAGE)
+  //   && structure.store.getFreeCapacity(RESOURCE_ENERGY) > 0
+  //   }
+  // });
+  target = structures.map(structure =>
+    (structure.structureType == STRUCTURE_CONTAINER &&
     structure.pos.isNearTo(structure.pos.findClosestByPath(FIND_SOURCES)) == false) ||
-    structure.structureType == STRUCTURE_STORAGE)
-    && structure.store.getFreeCapacity(RESOURCE_ENERGY) > 0
-    }
-  });
+    structure.structureType == STRUCTURE_STORAGE &&
+    structure.store.getFreeCapacity(RESOURCE_ENERGY) > 0);
   if (creep.transfer(target[0], RESOURCE_ENERGY) == ERR_NOT_IN_RANGE) {
     creep.moveTo(target[0]);
   }
