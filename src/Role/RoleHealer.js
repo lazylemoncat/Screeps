@@ -1,4 +1,4 @@
-let roleHealer = {
+export const roleHealer = {
   run : function(creep) {
     let injured = creep.pos.findClosestByPath(FIND_MY_CREEPS, {filter :
       (creeps) => creeps.hits < creeps.hitsMax && creeps.room == creep.room});
@@ -19,5 +19,3 @@ let roleHealer = {
   }
   
 }
-
-module.exports = roleHealer;

@@ -1,4 +1,4 @@
-let roleRepairer = {
+export const roleRepairer = {
   run: function(creep) {
     if(creep.memory.repairing && creep.store[RESOURCE_ENERGY] == 0) {
       creep.memory.repairing = false;
@@ -14,8 +14,6 @@ let roleRepairer = {
     }
   }
 }
-
-module.exports = roleRepairer;
 
 function backRoom(creep) {
   if (creep.room != Game.spawns["Spawn1"].room) {

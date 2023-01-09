@@ -1,16 +1,22 @@
-let roleHarvester = require('./RoleHarvester');
-let roleUpgrader = require('./RoleUpgrader');
-let roleBuilder = require('./RoleBuilder');
-let roleTransfer = require('./RoleTransfer');
-let roleRepairer = require('./RoleRepairer');
-let roleAttacker = require('./RoleAttacker');
-let roleHealer = require('./RoleHealer');
-let structureTower = require('./StructureTower');
-let newCreeps = require('./NewCreeps');
+import { roleHarvester } from './Role/RoleHarvester';
+import { roleBuilder } from './Role/RoleBuilder';
+import { roleUpgrader } from './Role/RoleUpgrader';
+import { roleAttacker } from './Role/RoleAttacker';
+import { roleHealer } from './Role/RoleHealer';
+import { roleRepairer } from './Role/RoleRepairer';
+import { roleTransfer } from './Role/RoleTransfer';
 
-module.exports.loop = function () {
+import { structureTower } from './Structure/StructureTower';
+
+import { newCreeps } from './NewCreep/NewCreeps';
+
+import { war } from './war/war';
+
+export const loop = function () {
   // create new creeps
-  newCreeps.run();
+  if (newCreeps.run() == -1) {
+    // war.run('W55S22');
+  }
   // run creeps
   for (let name in Game.creeps) {
     let creep = Game.creeps[name];

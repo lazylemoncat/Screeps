@@ -1,4 +1,4 @@
-let roleBuilder = {
+export const roleBuilder = {
   run: function (creep) {
     if (backRoom(creep) == 0) {
       return;
@@ -16,8 +16,6 @@ let roleBuilder = {
     }
 	}
 };
-
-module.exports = roleBuilder;
 
 function backRoom(creep) {
   if (creep.room != Game.spawns["Spawn1"].room) {

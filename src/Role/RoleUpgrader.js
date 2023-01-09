@@ -1,4 +1,4 @@
-let roleUpgrader = {
+export const roleUpgrader = {
   run: function(creep) {
     if(creep.memory.upgrading && creep.store[RESOURCE_ENERGY] == 0) {
       creep.memory.upgrading = false;
@@ -15,8 +15,6 @@ let roleUpgrader = {
     }
 	}
 };
-
-module.exports = roleUpgrader;
 
 function goUpgrade(creep) {
   if(creep.upgradeController(creep.room.controller) == ERR_NOT_IN_RANGE) {

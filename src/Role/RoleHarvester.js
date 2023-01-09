@@ -1,4 +1,4 @@
-let roleHarvester = {
+export const roleHarvester = {
   run: function(creep) {
     // if harvester's free capacity more than 0, harvest energy
     if (backRoom(creep) == 0) {
@@ -11,8 +11,6 @@ let roleHarvester = {
     }
 	}
 };
-
-module.exports = roleHarvester;
 
 function backRoom(creep) {
   if (creep.room != Game.spawns["Spawn1"].room) {

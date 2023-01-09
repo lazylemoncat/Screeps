@@ -1,5 +1,7 @@
+"use strict";
+
+exports["default"] = {
 // 告诉 rollup 他要打包什么
-export default {
   // 源代码的入口是哪个文件
   input: 'src/main.js',
   // 构建产物配置

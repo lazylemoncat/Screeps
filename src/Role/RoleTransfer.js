@@ -1,4 +1,4 @@
-let roleTransfer = {
+export const roleTransfer = {
   run: function(creep) {
     if(creep.memory.transfering && creep.store[RESOURCE_ENERGY] == 0) {
       creep.memory.transfering = false;
@@ -18,8 +18,6 @@ let roleTransfer = {
   }
 }
 
-module.exports = roleTransfer;
-
 function backRoom(creep) {
   if (creep.room != Game.spawns["Spawn1"].room) {
     creep.moveTo(Game.spawns["Spawn1"]);
@@ -31,13 +29,13 @@ function backRoom(creep) {
 
 
 function goTransfer(creep) {
-  let target = creep.pos.findClosestByPath(FIND_STRUCTURES, {filter : 
+  let target = creep.room.find(FIND_STRUCTURES, {filter : 
     (structure) => {return (structure.structureType == STRUCTURE_EXTENSION ||
     structure.structureType == STRUCTURE_SPAWN) &&
     structure.store.getFreeCapacity(RESOURCE_ENERGY) > 0}});
-  if (target != null) {
-    if (creep.transfer(target, RESOURCE_ENERGY) == ERR_NOT_IN_RANGE) {
-      creep.moveTo(target);
+  if (target[0] != undefined) {
+    if (creep.transfer(target[0], RESOURCE_ENERGY) == ERR_NOT_IN_RANGE) {
+      creep.moveTo(target[0]);
     }
     return;
   }
@@ -52,21 +50,21 @@ function goTransfer(creep) {
     return;
   }
 
-  target = creep.pos.findClosestByPath(FIND_STRUCTURES, {
-    filter: (structure) => {return (structure.structureType == STRUCTURE_EXTENSION ||
-    structure.structureType == STRUCTURE_SPAWN ||
-    structure.structureType == STRUCTURE_TOWER ||
+  target = creep.room.find(FIND_STRUCTURES, {
+    filter: (structure) => {return (
+    (structure.structureType == STRUCTURE_CONTAINER && 
+    structure.pos.isNearTo(structure.pos.findClosestByPath(FIND_SOURCES)) == false) ||
     structure.structureType == STRUCTURE_STORAGE)
-    && structure.store.getFreeCapacity(RESOURCE_ENERGY) > 0;
+    && structure.store.getFreeCapacity(RESOURCE_ENERGY) > 0
     }
   });
-  if (creep.transfer(target, RESOURCE_ENERGY) == ERR_NOT_IN_RANGE) {
-    creep.moveTo(target);
+  if (creep.transfer(target[0], RESOURCE_ENERGY) == ERR_NOT_IN_RANGE) {
+    creep.moveTo(target[0]);
   }
 }
 
 function goWithdraw(creep) {
-  let targetSource = creep.room.find(FIND_SOURCES)[creep.memory.sourcesPosition];
+  let targetSource = Game.getObjectById(creep.memory.sources);
   let targetContainer = targetSource.pos.findClosestByPath(FIND_STRUCTURES, {filter:
     (structure) => (structure.structureType == STRUCTURE_CONTAINER)});
   if (targetContainer == null || targetContainer.store[RESOURCE_ENERGY] == 0) {
