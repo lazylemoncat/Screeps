@@ -1,48 +1,67 @@
 'use strict';
 
 const roleHarvester = {
-  run: function(creep) {
-    // if harvester's free capacity more than 0, harvest energy
-    if (backRoom$3(creep) == 0) {
-      return;
+    run: function (creep) {
+        // if harvester went into the wrong room
+        if (backRoom$3(creep) == 0) {
+            return;
+        }
+        if (!creep.memory.harvesting && creep.store[RESOURCE_ENERGY] == 0) {
+            creep.memory.harvesting = true;
+        }
+        else if (creep.memory.harvesting && creep.store.getFreeCapacity() == 0) {
+            creep.memory.harvesting = false;
+        }
+        // if harvester's free capacity more than 0, harvest energy
+        if (creep.memory.harvesting) {
+            goHarvest(creep);
+        }
+        else {
+            transferEnergy(creep);
+        }
     }
-    if(creep.store.getFreeCapacity() > 0) {
-      goHarvest(creep);
-    } else {
-      transferEnergy(creep);
-    }
-	}
 };
-
 function backRoom$3(creep) {
-  if (creep.room != Game.spawns["Spawn1"].room) {
-    creep.moveTo(Game.spawns["Spawn1"]);
-    return 0;
-  } else {
-    return -1;
-  }
-}
-
-function goHarvest(creep) {
-  let targetSource = creep.room.find(FIND_SOURCES)[creep.memory.sourcesPosition];
-  if(creep.harvest(targetSource) == ERR_NOT_IN_RANGE) {
-    creep.moveTo(targetSource);
-  }
-}
-
-function transferEnergy(creep) {
-  let transferTo = creep.pos.findClosestByPath(FIND_STRUCTURES, {
-    filter: (structure) => {return (structure.structureType == STRUCTURE_CONTAINER ||
-    structure.structureType == STRUCTURE_STORAGE ||
-    structure.structureType == STRUCTURE_EXTENSION ||
-    structure.structureType == STRUCTURE_SPAWN ||
-    structure.structureType == STRUCTURE_TOWER)
-    && structure.store.getFreeCapacity(RESOURCE_ENERGY) > 0;
+    if (creep.room != Game.spawns["Spawn1"].room) {
+        creep.moveTo(Game.spawns["Spawn1"]);
+        return 0;
     }
-  });
-  if(creep.transfer(transferTo, RESOURCE_ENERGY) == ERR_NOT_IN_RANGE) {
-    creep.moveTo(transferTo);
-  }
+    else {
+        return -1;
+    }
+}
+function goHarvest(creep) {
+    let targetSource = Game.getObjectById(creep.memory.sourcesPosition);
+    if (creep.harvest(targetSource) == ERR_NOT_IN_RANGE) {
+        creep.moveTo(targetSource);
+    }
+}
+function transferEnergy(creep) {
+    let container = creep.pos.findClosestByPath(FIND_STRUCTURES, {
+        filter: (structure) => structure.structureType == STRUCTURE_CONTAINER
+    });
+    if (container.store.getFreeCapacity(RESOURCE_ENERGY) > 0) {
+        if (creep.transfer(container, RESOURCE_ENERGY) == ERR_NOT_IN_RANGE) {
+            creep.moveTo(container);
+        }
+        return;
+    }
+    let structures = creep.room.find(FIND_STRUCTURES, {
+        filter: (structure) => {
+            return (structure.structureType == STRUCTURE_STORAGE ||
+                structure.structureType == STRUCTURE_EXTENSION ||
+                structure.structureType == STRUCTURE_SPAWN ||
+                structure.structureType == STRUCTURE_TOWER)
+                && structure.store.getFreeCapacity(RESOURCE_ENERGY) > 0;
+        }
+    });
+    let transferTo = structures.filter(structure => structure.structureType == STRUCTURE_EXTENSION);
+    if (transferTo[0] == undefined) {
+        transferTo = structures;
+    }
+    if (creep.transfer(transferTo[0], RESOURCE_ENERGY) == ERR_NOT_IN_RANGE) {
+        creep.moveTo(transferTo[0]);
+    }
 }
 
 const roleBuilder = {
@@ -104,51 +123,46 @@ function goGetEnergy$2(creep) {
 }
 
 const roleUpgrader = {
-  run: function(creep) {
-    if(creep.memory.upgrading && creep.store[RESOURCE_ENERGY] == 0) {
-      creep.memory.upgrading = false;
+    run: function (creep) {
+        if (creep.memory.upgrading && creep.store[RESOURCE_ENERGY] == 0) {
+            creep.memory.upgrading = false;
+        }
+        if (!creep.memory.upgrading && creep.store.getFreeCapacity() == 0) {
+            creep.memory.upgrading = true;
+        }
+        if (creep.memory.upgrading) {
+            isNearToTarget(creep);
+            goUpgrade(creep);
+        }
+        else {
+            goGetEnergy$1(creep);
+        }
     }
-    if(!creep.memory.upgrading && creep.store.getFreeCapacity() == 0) {
-      creep.memory.upgrading = true;
-    }
-
-    if(creep.memory.upgrading) {
-      isNearToTarget(creep);
-      goUpgrade(creep);
-    } else {
-      goGetEnergy$1(creep);
-    }
-	}
 };
-
 function goUpgrade(creep) {
-  if(creep.upgradeController(creep.room.controller) == ERR_NOT_IN_RANGE) {
-    creep.moveTo(creep.room.controller);
-  }
-}
-
-function goGetEnergy$1(creep) {
-  let target = creep.pos.findClosestByPath(FIND_STRUCTURES, {filter :
-    (structure) => (structure.structureType == STRUCTURE_CONTAINER ||
-    structure.structureType == STRUCTURE_STORAGE) &&
-    structure.store[RESOURCE_ENERGY] > 0});
-  
-  if (target == undefined) {
-    target = creep.pos.findClosestByPath(FIND_SOURCES,{filter :
-      (sources) => sources.energy > 0});
-    if (creep.harvest(target) == ERR_NOT_IN_RANGE) {
-      creep.moveTo(target);
+    if (creep.upgradeController(creep.room.controller) == ERR_NOT_IN_RANGE) {
+        creep.moveTo(creep.room.controller);
     }
-  } else if (creep.withdraw(target, RESOURCE_ENERGY) == ERR_NOT_IN_RANGE) {
-    creep.moveTo(target);
-  }
 }
-
+function goGetEnergy$1(creep) {
+    let target = creep.pos.findClosestByPath(FIND_STRUCTURES, { filter: (structure) => (structure.structureType == STRUCTURE_CONTAINER ||
+            structure.structureType == STRUCTURE_STORAGE) &&
+            structure.store[RESOURCE_ENERGY] > 0 });
+    if (target == undefined) {
+        target = creep.pos.findClosestByPath(FIND_SOURCES, { filter: (sources) => sources.energy > 0 });
+        if (creep.harvest(target) == ERR_NOT_IN_RANGE) {
+            creep.moveTo(target);
+        }
+    }
+    else if (creep.withdraw(target, RESOURCE_ENERGY) == ERR_NOT_IN_RANGE) {
+        creep.moveTo(target);
+    }
+}
 function isNearToTarget(creep) {
-  let closestSource = creep.pos.findClosestByPath(FIND_SOURCES);
-  if (creep.pos.isNearTo(closestSource)) {
-    creep.moveTo(creep.room.controller);
-  }
+    let closestSource = creep.pos.findClosestByPath(FIND_SOURCES);
+    if (creep.pos.isNearTo(closestSource)) {
+        creep.moveTo(creep.room.controller);
+    }
 }
 
 const roleAttacker = {
@@ -292,12 +306,8 @@ function backRoom(creep) {
 
 
 function goTransfer(creep) {
-  // let target = creep.room.find(FIND_STRUCTURES, {filter : 
-  //   (structure) => {return (structure.structureType == STRUCTURE_EXTENSION ||
-  //   structure.structureType == STRUCTURE_SPAWN) &&
-  //   structure.store.getFreeCapacity(RESOURCE_ENERGY) > 0}});
   let structures = creep.room.find(FIND_STRUCTURES);
-  let target = structures.map(structure => 
+  let target = structures.filter(structure => 
     (structure.structureType == STRUCTURE_EXTENSION ||
     structure.structureType == STRUCTURE_SPAWN) &&
     structure.store.getFreeCapacity(RESOURCE_ENERGY) > 0 );
@@ -308,10 +318,7 @@ function goTransfer(creep) {
     return;
   }
 
-  // target = creep.room.find(FIND_STRUCTURES, {
-  //   filter : (structure) => {return (structure.structureType == STRUCTURE_TOWER) &&
-  //   structure.store.getFreeCapacity(RESOURCE_ENERGY) > 0}});
-  target = structures.map(structure => 
+  target = structures.filter(structure => 
     (structure.structureType == STRUCTURE_TOWER) &&
     structure.store.getFreeCapacity(RESOURCE_ENERGY) > 0);
   if (target[0] != undefined) {
@@ -321,15 +328,7 @@ function goTransfer(creep) {
     return;
   }
 
-  // target = creep.room.find(FIND_STRUCTURES, {
-  //   filter: (structure) => {return (
-  //   (structure.structureType == STRUCTURE_CONTAINER && 
-  //   structure.pos.isNearTo(structure.pos.findClosestByPath(FIND_SOURCES)) == false) ||
-  //   structure.structureType == STRUCTURE_STORAGE)
-  //   && structure.store.getFreeCapacity(RESOURCE_ENERGY) > 0
-  //   }
-  // });
-  target = structures.map(structure =>
+  target = structures.filter(structure =>
     (structure.structureType == STRUCTURE_CONTAINER &&
     structure.pos.isNearTo(structure.pos.findClosestByPath(FIND_SOURCES)) == false) ||
     structure.structureType == STRUCTURE_STORAGE &&
@@ -520,6 +519,7 @@ function newHarvester(harvesters, sourcesLength) {
       }
     }
   }
+  posFlag = sources[posFlag].id;
   Game.spawns['Spawn1'].spawnCreep(newCreepBody('harvester'), newName, {
     memory: {role: 'harvester', sourcesPosition: posFlag}});
 }
@@ -571,40 +571,40 @@ function newRepairer() {
 }
 
 const loop = function () {
-  // create new creeps
-  if (newCreeps.run() == -1) ;
-  // run creeps
-  for (let name in Game.creeps) {
-    let creep = Game.creeps[name];
-    if (creep.memory.role == 'harvester') {
-      roleHarvester.run(creep);
+    // create new creeps
+    newCreeps.run();
+    // run creeps
+    for (let name in Game.creeps) {
+        let creep = Game.creeps[name];
+        if (creep.memory.role == 'harvester') {
+            roleHarvester.run(creep);
+        }
+        else if (creep.memory.role == 'upgrader') {
+            roleUpgrader.run(creep);
+        }
+        else if (creep.memory.role == 'builder') {
+            roleBuilder.run(creep);
+        }
+        else if (creep.memory.role == 'transfer') {
+            roleTransfer.run(creep);
+        }
+        else if (creep.memory.role == 'repairer') {
+            roleRepairer.run(creep);
+        }
+        else if (creep.memory.role == 'attacker') {
+            roleAttacker.run(creep);
+        }
+        else if (creep.memory.role == 'healer') {
+            roleHealer.run(creep);
+        }
     }
-    if (creep.memory.role == 'upgrader') {
-      roleUpgrader.run(creep);
+    // run structures
+    for (let name in Game.structures) {
+        let structure = Game.structures[name];
+        if (structure.structureType == STRUCTURE_TOWER) {
+            structureTower.run(structure);
+        }
     }
-    if (creep.memory.role == 'builder') {
-      roleBuilder.run(creep);
-    }
-    if (creep.memory.role == 'transfer') {
-      roleTransfer.run(creep);
-    }
-    if (creep.memory.role == 'repairer') {
-      roleRepairer.run(creep);
-    }
-    if (creep.memory.role == 'attacker') {
-      roleAttacker.run(creep);
-    }
-    if (creep.memory.role == 'healer') {
-      roleHealer.run(creep);
-    }
-  }
-  // run structures
-  for (let name in Game.structures) {
-    let structure = Game.structures[name];
-    if (structure.structureType == STRUCTURE_TOWER) {
-      structureTower.run(structure);
-    }
-  }
 };
 
 exports.loop = loop;

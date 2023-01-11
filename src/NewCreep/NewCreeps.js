@@ -74,6 +74,7 @@ function newHarvester(harvesters, sourcesLength) {
       }
     }
   }
+  posFlag = sources[posFlag].id;
   Game.spawns['Spawn1'].spawnCreep(newCreepBody('harvester'), newName, {
     memory: {role: 'harvester', sourcesPosition: posFlag}});
 }
