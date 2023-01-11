@@ -8,7 +8,7 @@ export const newCreeps = {
     let harvesters = _.filter(Game.creeps, (creep) => creep.memory.role == 'harvester');
     let sourcesLength = Game.spawns['Spawn1'].room.find(FIND_SOURCES).length;
 
-    if (harvesters.length < sourcesLength * 2) {
+    if (harvesters.length < sourcesLength * 1) {
       newHarvester(harvesters, sourcesLength);
       return;
     }
