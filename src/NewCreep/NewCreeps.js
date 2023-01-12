@@ -18,7 +18,7 @@ export const newCreeps = {
       newBuilder();
       return;
     }
-    // if upgrader less than 1, creat it
+    // if upgrader less than 3, creat it
     let upgraders = _.filter(Game.creeps, (creep) => creep.memory.role == 'upgrader');
     if (upgraders.length < 3) {
       newUpgrader();

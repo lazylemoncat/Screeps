@@ -1,5 +1,5 @@
 export const roleUpgrader = {
-  run: function(creep) {
+  run: function(creep: Creep): void {
     if(creep.memory.upgrading && creep.store[RESOURCE_ENERGY] == 0) {
       creep.memory.upgrading = false;
     }
@@ -16,31 +16,30 @@ export const roleUpgrader = {
 	}
 };
 
-function goUpgrade(creep) {
+function goUpgrade(creep: Creep): void {
   if(creep.upgradeController(creep.room.controller) == ERR_NOT_IN_RANGE) {
     creep.moveTo(creep.room.controller);
   }
 }
 
-function goGetEnergy(creep) {
-  let target = creep.pos.findClosestByPath(FIND_STRUCTURES, {filter :
+function goGetEnergy(creep: Creep): void {
+  let targetContainer: AnyStructure = creep.pos.findClosestByPath(FIND_STRUCTURES, {filter :
     (structure) => (structure.structureType == STRUCTURE_CONTAINER ||
     structure.structureType == STRUCTURE_STORAGE) &&
     structure.store[RESOURCE_ENERGY] > 0});
-  
-  if (target == undefined) {
-    target = creep.pos.findClosestByPath(FIND_SOURCES,{filter :
+  if (targetContainer == undefined) {
+    let target: Source = creep.pos.findClosestByPath(FIND_SOURCES,{filter :
       (sources) => sources.energy > 0});
     if (creep.harvest(target) == ERR_NOT_IN_RANGE) {
       creep.moveTo(target);
     }
-  } else if (creep.withdraw(target, RESOURCE_ENERGY) == ERR_NOT_IN_RANGE) {
-    creep.moveTo(target);
+  } else if (creep.withdraw(targetContainer, RESOURCE_ENERGY) == ERR_NOT_IN_RANGE) {
+    creep.moveTo(targetContainer);
   }
 }
 
-function isNearToTarget(creep) {
-  let closestSource = creep.pos.findClosestByPath(FIND_SOURCES);
+function isNearToTarget(creep: Creep): void {
+  let closestSource: Source = creep.pos.findClosestByPath(FIND_SOURCES);
   if (creep.pos.isNearTo(closestSource)) {
     creep.moveTo(creep.room.controller);
   }

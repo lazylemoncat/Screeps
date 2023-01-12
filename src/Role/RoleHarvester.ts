@@ -1,5 +1,5 @@
 export const roleHarvester = {
-  run: function(creep: Creep) {
+  run: function(creep: Creep): void {
     // if harvester went into the wrong room
     if (backRoom(creep) == 0) {
       return;
@@ -47,6 +47,7 @@ function transferEnergy(creep: Creep): void {
 
   let structures: AnyStructure[] = creep.room.find(FIND_STRUCTURES, {
     filter: (structure) => {return (structure.structureType == STRUCTURE_STORAGE ||
+    structure.structureType == STRUCTURE_CONTAINER ||
     structure.structureType == STRUCTURE_EXTENSION ||
     structure.structureType == STRUCTURE_SPAWN ||
     structure.structureType == STRUCTURE_TOWER)
@@ -56,11 +57,14 @@ function transferEnergy(creep: Creep): void {
 
   let transferTo: AnyStructure[] = structures.filter(structure => 
     structure.structureType == STRUCTURE_EXTENSION);
+  let target: AnyStructure;
   if (transferTo[0] == undefined) {
-    transferTo = structures;
+    target = creep.pos.findClosestByPath(structures);
+  } else {
+    target = creep.pos.findClosestByPath(transferTo);
   }
 
-  if (creep.transfer(transferTo[0], RESOURCE_ENERGY) == ERR_NOT_IN_RANGE) {
-    creep.moveTo(transferTo[0]);
+  if (creep.transfer(target, RESOURCE_ENERGY) == ERR_NOT_IN_RANGE) {
+    creep.moveTo(target);
   }
 }

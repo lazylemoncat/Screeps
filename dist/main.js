@@ -49,6 +49,7 @@ function transferEnergy(creep) {
     let structures = creep.room.find(FIND_STRUCTURES, {
         filter: (structure) => {
             return (structure.structureType == STRUCTURE_STORAGE ||
+                structure.structureType == STRUCTURE_CONTAINER ||
                 structure.structureType == STRUCTURE_EXTENSION ||
                 structure.structureType == STRUCTURE_SPAWN ||
                 structure.structureType == STRUCTURE_TOWER)
@@ -56,11 +57,15 @@ function transferEnergy(creep) {
         }
     });
     let transferTo = structures.filter(structure => structure.structureType == STRUCTURE_EXTENSION);
+    let target;
     if (transferTo[0] == undefined) {
-        transferTo = structures;
+        target = creep.pos.findClosestByPath(structures);
     }
-    if (creep.transfer(transferTo[0], RESOURCE_ENERGY) == ERR_NOT_IN_RANGE) {
-        creep.moveTo(transferTo[0]);
+    else {
+        target = creep.pos.findClosestByPath(transferTo);
+    }
+    if (creep.transfer(target, RESOURCE_ENERGY) == ERR_NOT_IN_RANGE) {
+        creep.moveTo(target);
     }
 }
 
@@ -145,17 +150,17 @@ function goUpgrade(creep) {
     }
 }
 function goGetEnergy$1(creep) {
-    let target = creep.pos.findClosestByPath(FIND_STRUCTURES, { filter: (structure) => (structure.structureType == STRUCTURE_CONTAINER ||
+    let targetContainer = creep.pos.findClosestByPath(FIND_STRUCTURES, { filter: (structure) => (structure.structureType == STRUCTURE_CONTAINER ||
             structure.structureType == STRUCTURE_STORAGE) &&
             structure.store[RESOURCE_ENERGY] > 0 });
-    if (target == undefined) {
-        target = creep.pos.findClosestByPath(FIND_SOURCES, { filter: (sources) => sources.energy > 0 });
+    if (targetContainer == undefined) {
+        let target = creep.pos.findClosestByPath(FIND_SOURCES, { filter: (sources) => sources.energy > 0 });
         if (creep.harvest(target) == ERR_NOT_IN_RANGE) {
             creep.moveTo(target);
         }
     }
-    else if (creep.withdraw(target, RESOURCE_ENERGY) == ERR_NOT_IN_RANGE) {
-        creep.moveTo(target);
+    else if (creep.withdraw(targetContainer, RESOURCE_ENERGY) == ERR_NOT_IN_RANGE) {
+        creep.moveTo(targetContainer);
     }
 }
 function isNearToTarget(creep) {
@@ -381,68 +386,63 @@ function runRepair (tower) {
   tower.repair(targetTo[0]);
 }
 
-const newCreepBody = function(role) {
-  // MOVE 50,WORK 100,CARRY 50,ATTACK 80,RANGED_ATTACK 150,HEAL 250,CLAIM 600,TOUGH 10
-  let capacity = Game.spawns.Spawn1.room.energyCapacityAvailable;
-  if (Object.getOwnPropertyNames(Memory.creeps).length < 8 || capacity == 300) {
-    switch (role) {
-      case 'harvester' : return [WORK, CARRY, MOVE, MOVE];
-      case 'upgrader' : return [WORK, CARRY, MOVE, MOVE];
-      case 'builder' : return [WORK, CARRY, MOVE, MOVE];
-      case 'transfer' : return [CARRY, CARRY, CARRY, MOVE, MOVE, MOVE];
-      case 'repairer' : return [WORK, CARRY, MOVE, MOVE];
+const newCreepBody = function (role) {
+    // MOVE 50,WORK 100,CARRY 50,ATTACK 80,RANGED_ATTACK 150,HEAL 250,CLAIM 600,TOUGH 10
+    let capacity = Game.spawns.Spawn1.room.energyCapacityAvailable;
+    if (Object.getOwnPropertyNames(Memory.creeps).length < 7 || capacity == 300) {
+        switch (role) {
+            case 'harvester': return [WORK, CARRY, MOVE, MOVE];
+            case 'upgrader': return [WORK, CARRY, MOVE, MOVE];
+            case 'builder': return [WORK, CARRY, MOVE, MOVE];
+            case 'transfer': return [CARRY, CARRY, CARRY, MOVE, MOVE, MOVE];
+            case 'repairer': return [WORK, CARRY, MOVE, MOVE];
+        }
     }
-  } else {
-    switch (role) {
-      case 'harvester' : {
-        let bodys = [];
-        capacity /= 50;
-        bodys.push(CARRY, WORK, MOVE);
-        capacity -= 4;
-        for (; capacity >= 5; capacity -= 5) {
-          bodys.push(WORK, WORK, MOVE);
+    else {
+        switch (role) {
+            case 'harvester': {
+                let bodys = [];
+                capacity /= 50;
+                bodys.push(CARRY, WORK, MOVE);
+                capacity -= 4;
+                for (; capacity >= 5; capacity -= 5) {
+                    bodys.push(WORK, WORK, MOVE);
+                }
+                return bodys;
+            }
+            case 'upgrader': {
+                let bodys = [];
+                capacity /= 50;
+                bodys.push(WORK, CARRY, MOVE);
+                capacity -= 4;
+                for (; capacity >= 5; capacity -= 5) {
+                    bodys.push(WORK, WORK, MOVE);
+                }
+                return bodys;
+            }
+            case 'builder': {
+                let bodys = [];
+                for (capacity /= 50; capacity >= 4; capacity -= 4) {
+                    bodys.push(WORK, CARRY, MOVE);
+                }
+                return bodys;
+            }
+            case 'transfer': {
+                let bodys = [];
+                for (capacity /= 50; capacity >= 3; capacity -= 3) {
+                    bodys.push(MOVE, CARRY, CARRY);
+                }
+                return bodys;
+            }
+            case 'repairer': {
+                let bodys = [];
+                for (capacity /= 50; capacity >= 5; capacity -= 5) {
+                    bodys.push(WORK, CARRY, MOVE, MOVE);
+                }
+                return bodys;
+            }
         }
-        return bodys;
-      }
-      case 'upgrader' : {
-        let bodys = [];
-        for (capacity /= 50; capacity >= 4; capacity -= 4) {
-          bodys.push(WORK, CARRY, MOVE);
-        }
-        return bodys;
-      }
-      case 'builder' : {
-        let bodys = [];
-        for (capacity /= 50; capacity >= 4; capacity -= 4) {
-          bodys.push(WORK, CARRY, MOVE);
-        }
-        return bodys;
-      }
-      case 'transfer' : {
-        let bodys = [];
-        for (capacity /= 50; capacity >= 3; capacity -= 3) {
-          bodys.push(MOVE, CARRY, CARRY);
-        }
-        return bodys;
-      }
-      case 'repairer' : {
-        let bodys = [];
-        for (capacity /= 50; capacity >= 5; capacity -= 5) {
-          bodys.push(WORK, CARRY, MOVE, MOVE);
-        }
-        return bodys;
-      }
-      case 'attacker' : {
-        let bodys = [];
-        bodys.push(ATTACK, MOVE);
-        capacity -= 130;
-        for (capacity /= 60; capacity >= 1; capacity -= 1){
-          bodys.push(TOUGH, MOVE);
-        }
-        return bodys;
-      }
     }
-  }
 };
 
 const newCreeps = {
@@ -463,7 +463,7 @@ const newCreeps = {
       newBuilder();
       return;
     }
-    // if upgrader less than 1, creat it
+    // if upgrader less than 3, creat it
     let upgraders = _.filter(Game.creeps, (creep) => creep.memory.role == 'upgrader');
     if (upgraders.length < 3) {
       newUpgrader();
