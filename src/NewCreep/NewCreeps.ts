@@ -29,13 +29,14 @@ export const newCreeps = {
     }
     // if transfers less than sources's length, creat it
     let transfers: Creep[] = _.filter(Game.creeps, (creep) => creep.memory.role == 'transfer');
-    if (transfers.length < sourcesLength) {
+    let containers: Structure<StructureConstant>[] = _.filter(Game.structures, (structure) => structure.structureType == STRUCTURE_CONTAINER);
+    if (containers.length > 1 && transfers.length < sourcesLength) {
       newTransfer(transfers, sourcesLength);
       return 0;
     }
     // if repairer less than 1, creat it
     let repairer: Creep[] = _.filter(Game.creeps, (creep) => creep.memory.role == 'repairer');
-    if (repairer.length < 1) {
+    if (containers.length > 1 && repairer.length < 1) {
       newRepairer();
       return 0; 
     }
