@@ -35,10 +35,11 @@ function goHarvest(creep: Creep): void {
 }
 
 function transferEnergy(creep: Creep): void {
-  let container: StructureContainer = creep.pos.findClosestByPath(FIND_STRUCTURES, {
+  let source: _HasId = Game.getObjectById(creep.memory.sourcesPosition);
+  let container: StructureContainer = (source as Source).pos.findClosestByPath(FIND_STRUCTURES, {
     filter: (structure) => structure.structureType == STRUCTURE_CONTAINER
   });
-  if (container.store.getFreeCapacity(RESOURCE_ENERGY) > 0) {
+  if (container != undefined && container.store.getFreeCapacity(RESOURCE_ENERGY) > 0) {
     if (creep.transfer(container, RESOURCE_ENERGY) == ERR_NOT_IN_RANGE) {
       creep.moveTo(container);
     }

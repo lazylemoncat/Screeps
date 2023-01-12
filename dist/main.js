@@ -37,10 +37,11 @@ function goHarvest(creep) {
     }
 }
 function transferEnergy(creep) {
-    let container = creep.pos.findClosestByPath(FIND_STRUCTURES, {
+    let source = Game.getObjectById(creep.memory.sourcesPosition);
+    let container = source.pos.findClosestByPath(FIND_STRUCTURES, {
         filter: (structure) => structure.structureType == STRUCTURE_CONTAINER
     });
-    if (container.store.getFreeCapacity(RESOURCE_ENERGY) > 0) {
+    if (container != undefined && container.store.getFreeCapacity(RESOURCE_ENERGY) > 0) {
         if (creep.transfer(container, RESOURCE_ENERGY) == ERR_NOT_IN_RANGE) {
             creep.moveTo(container);
         }
@@ -117,13 +118,11 @@ function goGetEnergy$2(creep) {
         }
         return;
     }
-    else {
-        let soureces = creep.room.find(FIND_SOURCES, { filter: (sources) => sources.energy > 0 });
-        if (creep.harvest(soureces[0]) == ERR_NOT_IN_RANGE) {
-            creep.moveTo(soureces[0], { visualizePathStyle: { stroke: '#ffaa00' } });
-        }
-        return;
+    let soureces = creep.room.find(FIND_SOURCES, { filter: (sources) => sources.energy > 0 });
+    if (creep.harvest(soureces[0]) == ERR_NOT_IN_RANGE) {
+        creep.moveTo(soureces[0], { visualizePathStyle: { stroke: '#ffaa00' } });
     }
+    return;
 }
 
 const roleUpgrader = {
@@ -231,164 +230,155 @@ const roleHealer = {
 };
 
 const roleRepairer = {
-  run: function(creep) {
-    if(creep.memory.repairing && creep.store[RESOURCE_ENERGY] == 0) {
-      creep.memory.repairing = false;
-    } else if(!creep.memory.repairing && creep.store.getFreeCapacity() == 0) {
-      creep.memory.repairing = true;
+    run: function (creep) {
+        if (creep.memory.repairing && creep.store[RESOURCE_ENERGY] == 0) {
+            creep.memory.repairing = false;
+        }
+        else if (!creep.memory.repairing && creep.store.getFreeCapacity() == 0) {
+            creep.memory.repairing = true;
+        }
+        if (creep.memory.repairing) {
+            goRepair(creep);
+            backRoom$1(creep);
+        }
+        else {
+            goGetEnergy(creep);
+        }
     }
-
-    if (creep.memory.repairing) {
-      goRepair(creep);
-      backRoom$1(creep);
-    } else {
-      goGetEnergy(creep);
-    }
-  }
 };
-
 function backRoom$1(creep) {
-  if (creep.room != Game.spawns["Spawn1"].room) {
-    creep.moveTo(Game.spawns["Spawn1"]);
-  }
-}
-
-function goRepair(creep) {
-  let targetTo = creep.pos.findClosestByPath(FIND_STRUCTURES, {
-    filter: object => object.hits < object.hitsMax &&
-    object.structureType != STRUCTURE_WALL});
-  if (creep.repair(targetTo) == ERR_NOT_IN_RANGE) {
-    creep.moveTo(targetTo);
-  }
-}
-
-function goGetEnergy(creep) {
-  let targetEnergy = creep.pos.findClosestByPath(FIND_STRUCTURES, 
-    {filter: (structure) => {return (structure.structureType == STRUCTURE_CONTAINER ||
-    structure.structureType == STRUCTURE_STORAGE)
-    && structure.store[RESOURCE_ENERGY] > 0}});
-  if (targetEnergy == null) {
-    targetEnergy = creep.pos.findClosestByPath(FIND_SOURCES);
-    if(creep.harvest(targetEnergy) == ERR_NOT_IN_RANGE) {
-      creep.moveTo(targetEnergy);
+    if (creep.room != Game.spawns["Spawn1"].room) {
+        creep.moveTo(Game.spawns["Spawn1"]);
     }
-  } else {
-    if (creep.withdraw(targetEnergy, RESOURCE_ENERGY) == ERR_NOT_IN_RANGE) {
-      creep.moveTo(targetEnergy);
-      }
-  }
+}
+function goRepair(creep) {
+    let targetTo = creep.pos.findClosestByPath(FIND_STRUCTURES, {
+        filter: object => object.hits < object.hitsMax &&
+            object.structureType != STRUCTURE_WALL
+    });
+    if (creep.repair(targetTo) == ERR_NOT_IN_RANGE) {
+        creep.moveTo(targetTo);
+    }
+}
+function goGetEnergy(creep) {
+    let targetEnergy = creep.pos.findClosestByPath(FIND_STRUCTURES, { filter: (structure) => {
+            return (structure.structureType == STRUCTURE_CONTAINER ||
+                structure.structureType == STRUCTURE_STORAGE)
+                && structure.store[RESOURCE_ENERGY] > 0;
+        } });
+    if (targetEnergy == null) {
+        let targetsource = creep.pos.findClosestByPath(FIND_SOURCES);
+        if (creep.harvest(targetsource) == ERR_NOT_IN_RANGE) {
+            creep.moveTo(targetsource);
+        }
+    }
+    else {
+        if (creep.withdraw(targetEnergy, RESOURCE_ENERGY) == ERR_NOT_IN_RANGE) {
+            creep.moveTo(targetEnergy);
+        }
+    }
 }
 
 const roleTransfer = {
-  run: function(creep) {
-    if(creep.memory.transfering && creep.store[RESOURCE_ENERGY] == 0) {
-      creep.memory.transfering = false;
+    run: function (creep) {
+        if (creep.memory.transfering && creep.store[RESOURCE_ENERGY] == 0) {
+            creep.memory.transfering = false;
+        }
+        if (!creep.memory.transfering && creep.store.getFreeCapacity() == 0) {
+            creep.memory.transfering = true;
+        }
+        if (backRoom(creep) == 0) {
+            return;
+        }
+        if (creep.memory.transfering) {
+            goTransfer(creep);
+        }
+        else {
+            goWithdraw(creep);
+        }
     }
-    if(!creep.memory.transfering && creep.store.getFreeCapacity() == 0) {
-      creep.memory.transfering = true;
-    }
-
-    if (backRoom(creep) == 0) {
-      return;
-    }
-    if (creep.memory.transfering) {
-      goTransfer(creep);
-    } else {
-      goWithdraw(creep);
-    }
-  }
 };
-
 function backRoom(creep) {
-  if (creep.room != Game.spawns["Spawn1"].room) {
-    creep.moveTo(Game.spawns["Spawn1"]);
-    return 0;
-  } else {
-    return -1;
-  }
+    if (creep.room != Game.spawns["Spawn1"].room) {
+        creep.moveTo(Game.spawns["Spawn1"]);
+        return 0;
+    }
+    else {
+        return -1;
+    }
 }
-
-
 function goTransfer(creep) {
-  let structures = creep.room.find(FIND_STRUCTURES);
-  let target = structures.filter(structure => 
-    (structure.structureType == STRUCTURE_EXTENSION ||
-    structure.structureType == STRUCTURE_SPAWN) &&
-    structure.store.getFreeCapacity(RESOURCE_ENERGY) > 0 );
-  if (target[0] != undefined) {
-    if (creep.transfer(target[0], RESOURCE_ENERGY) == ERR_NOT_IN_RANGE) {
-      creep.moveTo(target[0]);
+    let structures = creep.room.find(FIND_STRUCTURES);
+    let target = structures.filter(structure => (structure.structureType == STRUCTURE_EXTENSION ||
+        structure.structureType == STRUCTURE_SPAWN) &&
+        structure.store.getFreeCapacity(RESOURCE_ENERGY) > 0);
+    if (target[0] != undefined) {
+        if (creep.transfer(target[0], RESOURCE_ENERGY) == ERR_NOT_IN_RANGE) {
+            creep.moveTo(target[0]);
+        }
+        return;
     }
-    return;
-  }
-
-  target = structures.filter(structure => 
-    (structure.structureType == STRUCTURE_TOWER) &&
-    structure.store.getFreeCapacity(RESOURCE_ENERGY) > 0);
-  if (target[0] != undefined) {
-    if (creep.transfer(target[0], RESOURCE_ENERGY) == ERR_NOT_IN_RANGE) {
-      creep.moveTo(target[0]);
+    target = structures.filter(structure => (structure.structureType == STRUCTURE_TOWER) &&
+        structure.store.getFreeCapacity(RESOURCE_ENERGY) > 0);
+    if (target[0] != undefined) {
+        if (creep.transfer(target[0], RESOURCE_ENERGY) == ERR_NOT_IN_RANGE) {
+            creep.moveTo(target[0]);
+        }
+        return;
     }
-    return;
-  }
-
-  target = structures.filter(structure =>
-    (structure.structureType == STRUCTURE_CONTAINER &&
-    structure.pos.isNearTo(structure.pos.findClosestByPath(FIND_SOURCES)) == false) ||
-    structure.structureType == STRUCTURE_STORAGE &&
-    structure.store.getFreeCapacity(RESOURCE_ENERGY) > 0);
-  if (creep.transfer(target[0], RESOURCE_ENERGY) == ERR_NOT_IN_RANGE) {
-    creep.moveTo(target[0]);
-  }
+    target = structures.filter(structure => (structure.structureType == STRUCTURE_CONTAINER &&
+        structure.pos.isNearTo(structure.pos.findClosestByPath(FIND_SOURCES)) == false) ||
+        structure.structureType == STRUCTURE_STORAGE &&
+            structure.store.getFreeCapacity(RESOURCE_ENERGY) > 0);
+    if (creep.transfer(target[0], RESOURCE_ENERGY) == ERR_NOT_IN_RANGE) {
+        creep.moveTo(target[0]);
+    }
 }
-
 function goWithdraw(creep) {
-  let targetSource = Game.getObjectById(creep.memory.sources);
-  let targetContainer = targetSource.pos.findClosestByPath(FIND_STRUCTURES, {filter:
-    (structure) => (structure.structureType == STRUCTURE_CONTAINER)});
-  if (targetContainer == null || targetContainer.store[RESOURCE_ENERGY] == 0) {
-    targetContainer = creep.pos.findClosestByPath(FIND_STRUCTURES, {filter:
-      (structure) => (structure.structureType == STRUCTURE_CONTAINER ||
-      structure.structureType == STRUCTURE_STORAGE)&&
-      structure.store[RESOURCE_ENERGY] > 0
-    });
-  }
-  if (creep.withdraw(targetContainer, RESOURCE_ENERGY) == ERR_NOT_IN_RANGE) {
-    creep.moveTo(targetContainer);
-  }
+    let targetSource = Game.getObjectById(creep.memory.sourcesPosition);
+    let targetContainer = targetSource.pos.findClosestByPath(FIND_STRUCTURES, { filter: (structure) => (structure.structureType == STRUCTURE_CONTAINER) });
+    if (targetContainer == null || targetContainer.store[RESOURCE_ENERGY] == 0) {
+        targetContainer = creep.pos.findClosestByPath(FIND_STRUCTURES, { filter: (structure) => (structure.structureType == STRUCTURE_CONTAINER ||
+                structure.structureType == STRUCTURE_STORAGE) &&
+                structure.store[RESOURCE_ENERGY] > 0
+        });
+    }
+    if (creep.withdraw(targetContainer, RESOURCE_ENERGY) == ERR_NOT_IN_RANGE) {
+        creep.moveTo(targetContainer);
+    }
 }
 
 const structureTower = {
-  run: function (tower) {
-    let enemy = tower.room.find(FIND_HOSTILE_CREEPS);
-    let injured = tower.room.find(FIND_MY_CREEPS, {filter :
-      (creeps) => creeps.hits < creeps.hitsMax && creeps.room == creep.room});
-    if (enemy[0] != undefined) {
-      goAttack(tower, enemy);
-    } else if (injured[0] != undefined) {
-      tower.heal(injured[0]);
-    } else {
-      runRepair(tower);
+    run: function (tower) {
+        let enemy = tower.room.find(FIND_HOSTILE_CREEPS);
+        let injured = tower.room.find(FIND_MY_CREEPS, { filter: (creeps) => creeps.hits < creeps.hitsMax && creeps.room == creeps.room });
+        if (enemy[0] != undefined) {
+            goAttack(tower, enemy);
+        }
+        else if (injured[0] != undefined) {
+            tower.heal(injured[0]);
+        }
+        else {
+            runRepair(tower);
+        }
     }
-  }
 };
-
 function goAttack(tower, enemy) {
-  let target = tower.pos.findClosestByPath(enemy);
-  tower.attack(target);
+    let target = tower.pos.findClosestByPath(enemy);
+    tower.attack(target);
 }
-
-function runRepair (tower) {
-  let targetTo = tower.room.find(FIND_STRUCTURES, {
-    filter: object => object.hits < object.hitsMax &&
-    object.structureType != STRUCTURE_WALL});
-  tower.repair(targetTo[0]);
+function runRepair(tower) {
+    let targetTo = tower.room.find(FIND_STRUCTURES, {
+        filter: object => object.hits < object.hitsMax &&
+            object.structureType != STRUCTURE_WALL
+    });
+    tower.repair(targetTo[0]);
 }
 
 const newCreepBody = function (role) {
     // MOVE 50,WORK 100,CARRY 50,ATTACK 80,RANGED_ATTACK 150,HEAL 250,CLAIM 600,TOUGH 10
     let capacity = Game.spawns.Spawn1.room.energyCapacityAvailable;
-    if (Object.getOwnPropertyNames(Memory.creeps).length < 7 || capacity == 300) {
+    if (capacity == 300 || Object.getOwnPropertyNames(Memory.creeps).length < 7) {
         switch (role) {
             case 'harvester': return [WORK, CARRY, MOVE, MOVE];
             case 'upgrader': return [WORK, CARRY, MOVE, MOVE];
@@ -445,129 +435,133 @@ const newCreepBody = function (role) {
 };
 
 const newCreeps = {
-  run: function() {
-    // delete dead creeps's memory
-    deleteDead();
-    // if harvesters less than sources*1, create it
-    let harvesters = _.filter(Game.creeps, (creep) => creep.memory.role == 'harvester');
-    let sourcesLength = Game.spawns['Spawn1'].room.find(FIND_SOURCES).length;
-
-    if (harvesters.length < sourcesLength * 1) {
-      newHarvester(harvesters, sourcesLength);
-      return;
-    }
-    // if builders less than 1, creat it
-    let builders = _.filter(Game.creeps, (creep) => creep.memory.role == 'builder');
-    if (builders.length < 1) {
-      newBuilder();
-      return;
-    }
-    // if upgrader less than 3, creat it
-    let upgraders = _.filter(Game.creeps, (creep) => creep.memory.role == 'upgrader');
-    if (upgraders.length < 3) {
-      newUpgrader();
-      return;
-    }
-    // if transfers less than sources's length, creat it
-    let transfers = _.filter(Game.creeps, (creep) => creep.memory.role == 'transfer');
-    if (transfers.length < sourcesLength) {
-      newTransfer(transfers, sourcesLength);
-      return;
-    }
-    // if repairer less than 1, creat it
-    let repairer = _.filter(Game.creeps, (creep) => creep.memory.role == 'repairer');
-    if (repairer.length < 1) {
-      newRepairer();
-      return; 
-    }
-    return -1;
-  }
-};
-
-function deleteDead () {
-  // delete dead creeps
-  for(let name in Memory.creeps) {
-    if(!Game.creeps[name]) {
-      delete Memory.creeps[name];
-    }
-  }
-}
-
-function newHarvester(harvesters, sourcesLength) {
-  let newName = 'Harvester' + Game.time;
-  let closestSource = Game.spawns["Spawn1"].pos.findClosestByPath(FIND_SOURCES);
-  let sources = [];
-  for (let i = 0; i < sourcesLength; ++i) {
-    sources[i] = 0;
-  }
-  for (let i = 0; i < sourcesLength; ++i) {
-    if (closestSource == Game.spawns["Spawn1"].room.find(FIND_SOURCES)[i]) {
-      closestSource = i;
-      break;
-    }
-  }
-  let posFlag = closestSource;
-  for (let i = 0; i < harvesters.length; ++i) {
-    ++sources[harvesters[i].memory.sourcesPosition];
-  }
-  if (sources[posFlag] >= 2) {
-    for (let i = 0; i < sources.length; ++i) {
-      if (sources[i] < 2) {
-        posFlag = i;
-        break;
-      }
-    }
-  }
-  sources = Game.room.find(FIND_SOURCES);
-  posFlag = sources[posFlag].id;
-  Game.spawns['Spawn1'].spawnCreep(newCreepBody('harvester'), newName, {
-    memory: {role: 'harvester', sourcesPosition: posFlag}});
-}
-
-function newUpgrader() {
-  let newName = 'Upgrader' + Game.time;
-  Game.spawns['Spawn1'].spawnCreep(newCreepBody('upgrader'), newName, {
-    memory: {role: 'upgrader'}});
-}
-
-function newBuilder() {
-  let newName = 'Builder' + Game.time;
-  Game.spawns['Spawn1'].spawnCreep(newCreepBody('builder'), newName, {
-    memory: {role: 'builder'}});
-}
-
-function newTransfer(transfer, sourcesLength) {
-  let newName = 'Transfer' + Game.time;
-  let posFlag = 0;
-  let closestSource = Game.spawns["Spawn1"].pos.findClosestByPath(FIND_SOURCES);
-  if (transfer.length == 0) {
-    for (let i = 0; i < sourcesLength; ++i) {
-      if (closestSource == Game.spawns["Spawn1"].room.find(FIND_SOURCES)[i]) {
-        closestSource = i;
-        break;
-      }
-    }
-    posFlag = closestSource;
-  } else {
-    for (let i = 0; i < sourcesLength; ++i) {
-      for (let j = 0; j < transfer.length; ++j) {
-        if (transfer[j].memory.sourcesPosition != i) {
-          posFlag = i;
-          break;
+    run: function () {
+        // delete dead creeps's memory
+        deleteDead();
+        if (Game.spawns.Spawn1.room.energyAvailable < 200) {
+            return 0;
         }
-      }
+        // if harvesters less than sources*2, create it
+        let harvesters = _.filter(Game.creeps, (creep) => creep.memory.role == 'harvester');
+        let sourcesLength = Game.spawns['Spawn1'].room.find(FIND_SOURCES).length;
+        if (harvesters.length < sourcesLength * 2) {
+            newHarvester(harvesters, sourcesLength);
+            return 0;
+        }
+        // if builders less than 1 and sites exist, creat it
+        let builders = _.filter(Game.creeps, (creep) => creep.memory.role == 'builder');
+        let sites = Game.spawns.Spawn1.room.find(FIND_CONSTRUCTION_SITES);
+        if (sites.length != 0 && builders.length < 1) {
+            newBuilder();
+            return 0;
+        }
+        // if upgrader less than 1, creat it
+        let upgraders = _.filter(Game.creeps, (creep) => creep.memory.role == 'upgrader');
+        if (upgraders.length < 1) {
+            newUpgrader();
+            return 0;
+        }
+        // if transfers less than sources's length, creat it
+        let transfers = _.filter(Game.creeps, (creep) => creep.memory.role == 'transfer');
+        if (transfers.length < sourcesLength) {
+            newTransfer(transfers, sourcesLength);
+            return 0;
+        }
+        // if repairer less than 1, creat it
+        let repairer = _.filter(Game.creeps, (creep) => creep.memory.role == 'repairer');
+        if (repairer.length < 1) {
+            newRepairer();
+            return 0;
+        }
+        return -1;
     }
-  }
-  Game.spawns['Spawn1'].spawnCreep(newCreepBody('transfer'), newName, {memory: {
-    role: 'transfer', 
-    sources: Game.spawns["Spawn1"].room.find(FIND_SOURCES)[posFlag].id
-    }});
+};
+function deleteDead() {
+    // delete dead creeps
+    for (let name in Memory.creeps) {
+        if (!Game.creeps[name]) {
+            delete Memory.creeps[name];
+        }
+    }
 }
-
+function newHarvester(harvesters, sourcesLength) {
+    let newName = 'Harvester' + Game.time;
+    let closestSource = Game.spawns["Spawn1"].pos.findClosestByPath(FIND_SOURCES);
+    let sources = [];
+    let posFlag = 0;
+    for (let i = 0; i < sourcesLength; ++i) {
+        sources[i] = 0;
+    }
+    for (let i = 0; i < sourcesLength; ++i) {
+        if (closestSource == Game.spawns["Spawn1"].room.find(FIND_SOURCES)[i]) {
+            posFlag = i;
+            break;
+        }
+    }
+    for (let i = 0; i < harvesters.length; ++i) {
+        for (let j = 0; j < sourcesLength; ++j) {
+            if (Game.spawns.Spawn1.room.find(FIND_SOURCES)[j].id == harvesters[i].memory.sourcesPosition) {
+                ++sources[j];
+            }
+        }
+    }
+    if (sources[posFlag] >= 2) {
+        for (let i = 0; i < sources.length; ++i) {
+            if (sources[i] < 2) {
+                posFlag = i;
+                break;
+            }
+        }
+    }
+    let source = Game.spawns.Spawn1.room.find(FIND_SOURCES);
+    let sourcesPosition = source[posFlag].id;
+    Game.spawns['Spawn1'].spawnCreep(newCreepBody('harvester'), newName, {
+        memory: { role: 'harvester', sourcesPosition: sourcesPosition }
+    });
+}
+function newUpgrader() {
+    let newName = 'Upgrader' + Game.time;
+    Game.spawns['Spawn1'].spawnCreep(newCreepBody('upgrader'), newName, {
+        memory: { role: 'upgrader' }
+    });
+}
+function newBuilder() {
+    let newName = 'Builder' + Game.time;
+    Game.spawns['Spawn1'].spawnCreep(newCreepBody('builder'), newName, {
+        memory: { role: 'builder' }
+    });
+}
+function newTransfer(transfer, sourcesLength) {
+    let newName = 'Transfer' + Game.time;
+    let posFlag = 0;
+    let source = Game.spawns.Spawn1.room.find(FIND_SOURCES);
+    let sources = [];
+    for (let i = 0; i < sourcesLength; ++i) {
+        sources[i] = 0;
+    }
+    for (let i = 0; i < transfer.length; ++i) {
+        for (let j = 0; j < sourcesLength; ++j) {
+            if (transfer[i].memory.sourcesPosition == source[j].id) {
+                ++sources[j];
+            }
+        }
+    }
+    for (let i = 0; i < sourcesLength; ++i) {
+        if (sources[i] == 0) {
+            posFlag = i;
+            break;
+        }
+    }
+    Game.spawns['Spawn1'].spawnCreep(newCreepBody('transfer'), newName, { memory: {
+            role: 'transfer',
+            sourcesPosition: Game.spawns["Spawn1"].room.find(FIND_SOURCES)[posFlag].id,
+        } });
+}
 function newRepairer() {
-  let newName = 'Repairer' + Game.time;
-  Game.spawns['Spawn1'].spawnCreep(newCreepBody('repairer'), newName, {
-    memory: {role: 'repairer'}});
+    let newName = 'Repairer' + Game.time;
+    Game.spawns['Spawn1'].spawnCreep(newCreepBody('repairer'), newName, {
+        memory: { role: 'repairer' }
+    });
 }
 
 const loop = function () {

@@ -17,7 +17,7 @@ export const roleBuilder = {
 	}
 };
 
-function backRoom(creep) {
+function backRoom(creep: Creep): number {
   if (creep.room != Game.spawns["Spawn1"].room) {
     creep.moveTo(Game.spawns["Spawn1"]);
     return 0;
@@ -26,8 +26,8 @@ function backRoom(creep) {
   }
 }
 
-function goBuild(creep) {
-  let target = creep.room.find(FIND_CONSTRUCTION_SITES);
+function goBuild(creep: Creep): void {
+  let target: ConstructionSite[] = creep.room.find(FIND_CONSTRUCTION_SITES);
     if(target[0]) {
       if(creep.build(target[0]) == ERR_NOT_IN_RANGE) {
         creep.moveTo(target[0], {visualizePathStyle: {stroke: '#ffffff'}});
@@ -35,8 +35,8 @@ function goBuild(creep) {
     }
 }
 
-function goGetEnergy(creep) {
-  let targetStore = creep.pos.findClosestByPath(FIND_STRUCTURES, 
+function goGetEnergy(creep: Creep): void {
+  let targetStore: AnyStoreStructure = creep.pos.findClosestByPath(FIND_STRUCTURES, 
     {filter: (structure) => {return (structure.structureType == STRUCTURE_CONTAINER ||
     structure.structureType == STRUCTURE_STORAGE) &&
     structure.store[RESOURCE_ENERGY] > 0}});
@@ -46,12 +46,11 @@ function goGetEnergy(creep) {
       creep.moveTo(targetStore);
     }
     return;
-  } else {
-    let soureces = creep.room.find(FIND_SOURCES, {filter :
-      (sources) => sources.energy > 0});
-    if (creep.harvest(soureces[0]) == ERR_NOT_IN_RANGE) {
-      creep.moveTo(soureces[0], {visualizePathStyle: {stroke: '#ffaa00'}});
-    }
-    return;
   }
+  let soureces: Source[] = creep.room.find(FIND_SOURCES, {filter :
+    (sources) => sources.energy > 0});
+  if (creep.harvest(soureces[0]) == ERR_NOT_IN_RANGE) {
+    creep.moveTo(soureces[0], {visualizePathStyle: {stroke: '#ffaa00'}});
+  }
+  return;
 }

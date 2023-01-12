@@ -42,7 +42,7 @@ export const loop = function (): void {
   for (let name in Game.structures) {
     let structure = Game.structures[name];
     if (structure.structureType == STRUCTURE_TOWER) {
-      structureTower.run(structure);
+      structureTower.run(structure as StructureTower);
     }
   }
 }
