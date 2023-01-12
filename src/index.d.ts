@@ -3,4 +3,5 @@ interface CreepMemory {
   sourcesPosition: any,
   harvesting: boolean,
   upgrading: boolean,
+  building: boolean,
 }

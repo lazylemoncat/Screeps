@@ -70,61 +70,60 @@ function transferEnergy(creep) {
 }
 
 const roleBuilder = {
-  run: function (creep) {
-    if (backRoom$2(creep) == 0) {
-      return;
+    run: function (creep) {
+        if (backRoom$2(creep) == 0) {
+            return;
+        }
+        if (creep.memory.building && creep.store[RESOURCE_ENERGY] == 0) {
+            creep.memory.building = false;
+        }
+        else if (!creep.memory.building && creep.store.getFreeCapacity() == 0) {
+            creep.memory.building = true;
+        }
+        if (creep.memory.building) {
+            goBuild(creep);
+        }
+        else {
+            goGetEnergy$2(creep);
+        }
     }
-    if(creep.memory.building && creep.store[RESOURCE_ENERGY] == 0) {
-      creep.memory.building = false;
-    } else if(!creep.memory.building && creep.store.getFreeCapacity() == 0) {
-      creep.memory.building = true;
-    }
-
-    if(creep.memory.building) {
-      goBuild(creep);
-    } else {
-      goGetEnergy$2(creep);
-    }
-	}
 };
-
 function backRoom$2(creep) {
-  if (creep.room != Game.spawns["Spawn1"].room) {
-    creep.moveTo(Game.spawns["Spawn1"]);
-    return 0;
-  } else {
-    return -1;
-  }
+    if (creep.room != Game.spawns["Spawn1"].room) {
+        creep.moveTo(Game.spawns["Spawn1"]);
+        return 0;
+    }
+    else {
+        return -1;
+    }
 }
-
 function goBuild(creep) {
-  let target = creep.room.find(FIND_CONSTRUCTION_SITES);
-    if(target[0]) {
-      if(creep.build(target[0]) == ERR_NOT_IN_RANGE) {
-        creep.moveTo(target[0], {visualizePathStyle: {stroke: '#ffffff'}});
-      }
+    let target = creep.room.find(FIND_CONSTRUCTION_SITES);
+    if (target[0]) {
+        if (creep.build(target[0]) == ERR_NOT_IN_RANGE) {
+            creep.moveTo(target[0], { visualizePathStyle: { stroke: '#ffffff' } });
+        }
     }
 }
-
 function goGetEnergy$2(creep) {
-  let targetStore = creep.pos.findClosestByPath(FIND_STRUCTURES, 
-    {filter: (structure) => {return (structure.structureType == STRUCTURE_CONTAINER ||
-    structure.structureType == STRUCTURE_STORAGE) &&
-    structure.store[RESOURCE_ENERGY] > 0}});
-
-  if (targetStore != null) {
-    if (creep.withdraw(targetStore, RESOURCE_ENERGY) == ERR_NOT_IN_RANGE) {
-      creep.moveTo(targetStore);
+    let targetStore = creep.pos.findClosestByPath(FIND_STRUCTURES, { filter: (structure) => {
+            return (structure.structureType == STRUCTURE_CONTAINER ||
+                structure.structureType == STRUCTURE_STORAGE) &&
+                structure.store[RESOURCE_ENERGY] > 0;
+        } });
+    if (targetStore != null) {
+        if (creep.withdraw(targetStore, RESOURCE_ENERGY) == ERR_NOT_IN_RANGE) {
+            creep.moveTo(targetStore);
+        }
+        return;
     }
-    return;
-  } else {
-    let soureces = creep.room.find(FIND_SOURCES, {filter :
-      (sources) => sources.energy > 0});
-    if (creep.harvest(soureces[0]) == ERR_NOT_IN_RANGE) {
-      creep.moveTo(soureces[0], {visualizePathStyle: {stroke: '#ffaa00'}});
+    else {
+        let soureces = creep.room.find(FIND_SOURCES, { filter: (sources) => sources.energy > 0 });
+        if (creep.harvest(soureces[0]) == ERR_NOT_IN_RANGE) {
+            creep.moveTo(soureces[0], { visualizePathStyle: { stroke: '#ffaa00' } });
+        }
+        return;
     }
-    return;
-  }
 }
 
 const roleUpgrader = {
@@ -519,6 +518,7 @@ function newHarvester(harvesters, sourcesLength) {
       }
     }
   }
+  sources = Game.room.find(FIND_SOURCES);
   posFlag = sources[posFlag].id;
   Game.spawns['Spawn1'].spawnCreep(newCreepBody('harvester'), newName, {
     memory: {role: 'harvester', sourcesPosition: posFlag}});
