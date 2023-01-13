@@ -22,11 +22,14 @@ function backRoom(creep: Creep): void {
 }
 
 function goRepair(creep: Creep): void {
-  let targetTo: AnyStructure = creep.pos.findClosestByPath(FIND_STRUCTURES, {
-    filter: object => object.hits < object.hitsMax &&
-    object.structureType != STRUCTURE_WALL});
-  if (creep.repair(targetTo) == ERR_NOT_IN_RANGE) {
-    creep.moveTo(targetTo);
+  let injured: AnyStructure[] = creep.room.find(FIND_STRUCTURES, {
+    filter: object => object.hits < object.hitsMax});
+  let targetTo: AnyStructure[] = injured.filter(structure => structure.structureType != STRUCTURE_WALL);
+  if (targetTo[0] == undefined) {
+    targetTo = injured;
+  }
+  if (creep.repair(targetTo[0]) == ERR_NOT_IN_RANGE) {
+    creep.moveTo(targetTo[0]);
   }
 }
 

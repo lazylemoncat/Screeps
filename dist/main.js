@@ -267,12 +267,15 @@ function backRoom$1(creep) {
     }
 }
 function goRepair(creep) {
-    let targetTo = creep.pos.findClosestByPath(FIND_STRUCTURES, {
-        filter: object => object.hits < object.hitsMax &&
-            object.structureType != STRUCTURE_WALL
+    let injured = creep.room.find(FIND_STRUCTURES, {
+        filter: object => object.hits < object.hitsMax
     });
-    if (creep.repair(targetTo) == ERR_NOT_IN_RANGE) {
-        creep.moveTo(targetTo);
+    let targetTo = injured.filter(structure => structure.structureType != STRUCTURE_WALL);
+    if (targetTo[0] == undefined) {
+        targetTo = injured;
+    }
+    if (creep.repair(targetTo[0]) == ERR_NOT_IN_RANGE) {
+        creep.moveTo(targetTo[0]);
     }
 }
 function goGetEnergy(creep) {
