@@ -7,10 +7,10 @@ export const newCreeps = {
     if (Game.spawns.Spawn1.room.energyAvailable < 200) {
       return 0;
     }
-    // if harvesters less than sources*2, create it
+    // if harvesters less than sources, create it
     let harvesters: Creep[] = _.filter(Game.creeps, (creep) => creep.memory.role == 'harvester');
     let sourcesLength: number = Game.spawns['Spawn1'].room.find(FIND_SOURCES).length;
-    if (harvesters.length < sourcesLength * 2) {
+    if (harvesters.length < sourcesLength) {
       newHarvester(harvesters, sourcesLength);
       return 0;
     }
@@ -23,13 +23,14 @@ export const newCreeps = {
     }
     // if upgrader less than 1, creat it
     let upgraders: Creep[] = _.filter(Game.creeps, (creep) => creep.memory.role == 'upgrader');
-    if (upgraders.length < 1) {
+    let upgradersNum = sites.length > 0 ? 1 : 3;
+    if (upgraders.length < upgradersNum) {
       newUpgrader();
       return 0;
     }
     // if transfers less than sources's length, creat it
     let transfers: Creep[] = _.filter(Game.creeps, (creep) => creep.memory.role == 'transfer');
-    let containers: Structure<StructureConstant>[] = _.filter(Game.structures, (structure) => structure.structureType == STRUCTURE_CONTAINER);
+    let containers: StructureContainer[] = Game.spawns.Spawn1.room.find(FIND_STRUCTURES,{filter:(structure) => structure.structureType == STRUCTURE_CONTAINER});
     if (containers.length > 1 && transfers.length < sourcesLength) {
       newTransfer(transfers, sourcesLength);
       return 0;
@@ -55,33 +56,17 @@ function deleteDead () {
 
 function newHarvester(harvesters: Creep[], sourcesLength: number) {
   let newName: string = 'Harvester' + Game.time;
-  let closestSource: Source = Game.spawns["Spawn1"].pos.findClosestByPath(FIND_SOURCES);
-  let sources: number[] = [];
   let posFlag = 0;
   for (let i = 0; i < sourcesLength; ++i) {
-    sources[i] = 0;
-  }
-  for (let i = 0; i < sourcesLength; ++i) {
-    if (closestSource == Game.spawns["Spawn1"].room.find(FIND_SOURCES)[i]) {
-      posFlag = i;
-      break;
-    }
-  }
-  for (let i = 0; i < harvesters.length; ++i) {
-    for (let j = 0; j < sourcesLength; ++j) {
-      if (Game.spawns.Spawn1.room.find(FIND_SOURCES)[j].id == harvesters[i].memory.sourcesPosition) {
-        ++sources[j];
-      }
-    }
-  }
-  if (sources[posFlag] >= 2) {
-    for (let i = 0; i < sources.length; ++i) {
-      if (sources[i] < 2) {
-        posFlag = i;
+    for (let j = 0; j < harvesters.length; ++j) {
+      if (Game.spawns.Spawn1.room.find(FIND_SOURCES)[i].id == harvesters[j].memory.sourcesPosition) {
+        posFlag += 1;
         break;
       }
     }
+    if (posFlag == i) break;
   }
+  if (posFlag >= sourcesLength) return;
   let source: Source[] = Game.spawns.Spawn1.room.find(FIND_SOURCES);
   let sourcesPosition: String = source[posFlag].id;
   Game.spawns['Spawn1'].spawnCreep(newCreepBody('harvester'), newName, {
@@ -104,27 +89,20 @@ function newTransfer(transfer: Creep[], sourcesLength: number) {
   let newName: string = 'Transfer' + Game.time;
   let posFlag: number = 0;
   let source: Source[] = Game.spawns.Spawn1.room.find(FIND_SOURCES);
-  let sources: number[] = [];
   for (let i = 0; i < sourcesLength; ++i) {
-    sources[i] = 0;
-  }
-  for (let i = 0; i < transfer.length; ++i) {
-    for (let j = 0; j < sourcesLength; ++j) {
-      if (transfer[i].memory.sourcesPosition == source[j].id) {
-        ++sources[j];
+    for (let j = 0; j < transfer.length; ++j) {
+      if (transfer[j].memory.sourcesPosition == source[i].id) {
+        posFlag += 1;
+        break;
       }
     }
+    if (posFlag == i) break;
   }
-  for (let i = 0; i < sourcesLength; ++i) {
-    if (sources[i] == 0) {
-      posFlag = i;
-      break;
-    }
-  }
+  if (posFlag >= sourcesLength) return;
   Game.spawns['Spawn1'].spawnCreep(newCreepBody('transfer'), newName, {memory: {
     role: 'transfer', 
-    sourcesPosition: Game.spawns["Spawn1"].room.find(FIND_SOURCES)[posFlag].id,
-    }});
+    sourcesPosition: source[posFlag].id,
+  }});
 }
 
 function newRepairer() {

@@ -32,6 +32,17 @@ function backRoom$3(creep) {
 }
 function goHarvest(creep) {
     let targetSource = Game.getObjectById(creep.memory.sourcesPosition);
+    if (targetSource.energy == 0)
+        return;
+    let container = creep.room.find(FIND_STRUCTURES, { filter: (structure) => structure.structureType == STRUCTURE_CONTAINER &&
+            structure.pos.isNearTo(targetSource) });
+    if (container[0] != undefined &&
+        container[0].store.getFreeCapacity(RESOURCE_ENERGY) == 0 &&
+        creep.getActiveBodyparts(CARRY) == 0)
+        return;
+    if (container[0] != undefined && creep.pos != container[0].pos) {
+        creep.moveTo(container[0]);
+    }
     if (creep.harvest(targetSource) == ERR_NOT_IN_RANGE) {
         creep.moveTo(targetSource);
     }
@@ -118,9 +129,13 @@ function goGetEnergy$2(creep) {
         }
         return;
     }
-    let soureces = creep.room.find(FIND_SOURCES, { filter: (sources) => sources.energy > 0 });
-    if (creep.harvest(soureces[0]) == ERR_NOT_IN_RANGE) {
-        creep.moveTo(soureces[0], { visualizePathStyle: { stroke: '#ffaa00' } });
+    let sources = creep.room.find(FIND_SOURCES, { filter: (sources) => sources.energy > 0 });
+    if (creep.harvest(sources[0]) == ERR_NOT_IN_RANGE) {
+        if (creep.moveTo(sources[0]) == ERR_NO_PATH) {
+            if (creep.harvest(sources[1]) == ERR_NOT_IN_RANGE) {
+                creep.moveTo(sources[1]);
+            }
+        }
     }
     return;
 }
@@ -391,11 +406,10 @@ const newCreepBody = function (role) {
         switch (role) {
             case 'harvester': {
                 let bodys = [];
-                capacity /= 50;
-                bodys.push(CARRY, WORK, MOVE);
-                capacity -= 4;
-                for (; capacity >= 5; capacity -= 5) {
+                for (capacity /= 50; capacity >= 5; capacity -= 5) {
                     bodys.push(WORK, WORK, MOVE);
+                    if (bodys.length == 9)
+                        break;
                 }
                 return bodys;
             }
@@ -441,10 +455,10 @@ const newCreeps = {
         if (Game.spawns.Spawn1.room.energyAvailable < 200) {
             return 0;
         }
-        // if harvesters less than sources*2, create it
+        // if harvesters less than sources, create it
         let harvesters = _.filter(Game.creeps, (creep) => creep.memory.role == 'harvester');
         let sourcesLength = Game.spawns['Spawn1'].room.find(FIND_SOURCES).length;
-        if (harvesters.length < sourcesLength * 2) {
+        if (harvesters.length < sourcesLength) {
             newHarvester(harvesters, sourcesLength);
             return 0;
         }
@@ -457,13 +471,14 @@ const newCreeps = {
         }
         // if upgrader less than 1, creat it
         let upgraders = _.filter(Game.creeps, (creep) => creep.memory.role == 'upgrader');
-        if (upgraders.length < 1) {
+        let upgradersNum = sites.length > 0 ? 1 : 3;
+        if (upgraders.length < upgradersNum) {
             newUpgrader();
             return 0;
         }
         // if transfers less than sources's length, creat it
         let transfers = _.filter(Game.creeps, (creep) => creep.memory.role == 'transfer');
-        let containers = _.filter(Game.structures, (structure) => structure.structureType == STRUCTURE_CONTAINER);
+        let containers = Game.spawns.Spawn1.room.find(FIND_STRUCTURES, { filter: (structure) => structure.structureType == STRUCTURE_CONTAINER });
         if (containers.length > 1 && transfers.length < sourcesLength) {
             newTransfer(transfers, sourcesLength);
             return 0;
@@ -487,33 +502,19 @@ function deleteDead() {
 }
 function newHarvester(harvesters, sourcesLength) {
     let newName = 'Harvester' + Game.time;
-    let closestSource = Game.spawns["Spawn1"].pos.findClosestByPath(FIND_SOURCES);
-    let sources = [];
     let posFlag = 0;
     for (let i = 0; i < sourcesLength; ++i) {
-        sources[i] = 0;
-    }
-    for (let i = 0; i < sourcesLength; ++i) {
-        if (closestSource == Game.spawns["Spawn1"].room.find(FIND_SOURCES)[i]) {
-            posFlag = i;
-            break;
-        }
-    }
-    for (let i = 0; i < harvesters.length; ++i) {
-        for (let j = 0; j < sourcesLength; ++j) {
-            if (Game.spawns.Spawn1.room.find(FIND_SOURCES)[j].id == harvesters[i].memory.sourcesPosition) {
-                ++sources[j];
-            }
-        }
-    }
-    if (sources[posFlag] >= 2) {
-        for (let i = 0; i < sources.length; ++i) {
-            if (sources[i] < 2) {
-                posFlag = i;
+        for (let j = 0; j < harvesters.length; ++j) {
+            if (Game.spawns.Spawn1.room.find(FIND_SOURCES)[i].id == harvesters[j].memory.sourcesPosition) {
+                posFlag += 1;
                 break;
             }
         }
+        if (posFlag == i)
+            break;
     }
+    if (posFlag >= sourcesLength)
+        return;
     let source = Game.spawns.Spawn1.room.find(FIND_SOURCES);
     let sourcesPosition = source[posFlag].id;
     Game.spawns['Spawn1'].spawnCreep(newCreepBody('harvester'), newName, {
@@ -536,26 +537,21 @@ function newTransfer(transfer, sourcesLength) {
     let newName = 'Transfer' + Game.time;
     let posFlag = 0;
     let source = Game.spawns.Spawn1.room.find(FIND_SOURCES);
-    let sources = [];
     for (let i = 0; i < sourcesLength; ++i) {
-        sources[i] = 0;
-    }
-    for (let i = 0; i < transfer.length; ++i) {
-        for (let j = 0; j < sourcesLength; ++j) {
-            if (transfer[i].memory.sourcesPosition == source[j].id) {
-                ++sources[j];
+        for (let j = 0; j < transfer.length; ++j) {
+            if (transfer[j].memory.sourcesPosition == source[i].id) {
+                posFlag += 1;
+                break;
             }
         }
-    }
-    for (let i = 0; i < sourcesLength; ++i) {
-        if (sources[i] == 0) {
-            posFlag = i;
+        if (posFlag == i)
             break;
-        }
     }
+    if (posFlag >= sourcesLength)
+        return;
     Game.spawns['Spawn1'].spawnCreep(newCreepBody('transfer'), newName, { memory: {
             role: 'transfer',
-            sourcesPosition: Game.spawns["Spawn1"].room.find(FIND_SOURCES)[posFlag].id,
+            sourcesPosition: source[posFlag].id,
         } });
 }
 function newRepairer() {

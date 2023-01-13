@@ -47,10 +47,14 @@ function goGetEnergy(creep: Creep): void {
     }
     return;
   }
-  let soureces: Source[] = creep.room.find(FIND_SOURCES, {filter :
+  let sources: Source[] = creep.room.find(FIND_SOURCES, {filter :
     (sources) => sources.energy > 0});
-  if (creep.harvest(soureces[0]) == ERR_NOT_IN_RANGE) {
-    creep.moveTo(soureces[0], {visualizePathStyle: {stroke: '#ffaa00'}});
+  if (creep.harvest(sources[0]) == ERR_NOT_IN_RANGE) {
+    if (creep.moveTo(sources[0]) == ERR_NO_PATH) {
+      if (creep.harvest(sources[1]) == ERR_NOT_IN_RANGE) {
+        creep.moveTo(sources[1]);
+      }
+    }
   }
   return;
 }

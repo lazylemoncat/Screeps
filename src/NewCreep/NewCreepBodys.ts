@@ -13,11 +13,9 @@ export const newCreepBody = function(role: String): BodyPartConstant[] {
     switch (role) {
       case 'harvester' : {
         let bodys: BodyPartConstant[] = [];
-        capacity /= 50;
-        bodys.push(CARRY, WORK, MOVE);
-        capacity -= 4;
-        for (; capacity >= 5; capacity -= 5) {
+        for (capacity /= 50; capacity >= 5; capacity -= 5) {
           bodys.push(WORK, WORK, MOVE);
+          if (bodys.length == 9) break;
         }
         return bodys;
       }
