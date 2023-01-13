@@ -272,7 +272,7 @@ function goRepair(creep) {
     });
     let targetTo = injured.filter(structure => structure.structureType != STRUCTURE_WALL);
     if (targetTo[0] == undefined) {
-        targetTo = injured;
+        targetTo = injured.sort((a, b) => a.hits - b.hits);
     }
     if (creep.repair(targetTo[0]) == ERR_NOT_IN_RANGE) {
         creep.moveTo(targetTo[0]);
@@ -479,10 +479,10 @@ const newCreeps = {
             newUpgrader();
             return 0;
         }
-        // if transfers less than sources's length, creat it
+        // if transfers less than sources's length * 2, creat it
         let transfers = _.filter(Game.creeps, (creep) => creep.memory.role == 'transfer');
         let containers = Game.spawns.Spawn1.room.find(FIND_STRUCTURES, { filter: (structure) => structure.structureType == STRUCTURE_CONTAINER });
-        if (containers.length > 1 && transfers.length < sourcesLength) {
+        if (containers.length > 1 && transfers.length < sourcesLength * 2) {
             newTransfer(transfers, sourcesLength);
             return 0;
         }
@@ -540,11 +540,16 @@ function newTransfer(transfer, sourcesLength) {
     let newName = 'Transfer' + Game.time;
     let posFlag = 0;
     let source = Game.spawns.Spawn1.room.find(FIND_SOURCES);
+    let temp = 0;
     for (let i = 0; i < sourcesLength; ++i) {
         for (let j = 0; j < transfer.length; ++j) {
             if (transfer[j].memory.sourcesPosition == source[i].id) {
-                posFlag += 1;
-                break;
+                temp += 1;
+                if (temp == 2) {
+                    posFlag += 1;
+                    temp = 0;
+                    break;
+                }
             }
         }
         if (posFlag == i)

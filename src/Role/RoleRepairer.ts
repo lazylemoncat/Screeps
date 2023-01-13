@@ -26,7 +26,7 @@ function goRepair(creep: Creep): void {
     filter: object => object.hits < object.hitsMax});
   let targetTo: AnyStructure[] = injured.filter(structure => structure.structureType != STRUCTURE_WALL);
   if (targetTo[0] == undefined) {
-    targetTo = injured;
+    targetTo = injured.sort((a,b) => a.hits - b.hits);
   }
   if (creep.repair(targetTo[0]) == ERR_NOT_IN_RANGE) {
     creep.moveTo(targetTo[0]);
