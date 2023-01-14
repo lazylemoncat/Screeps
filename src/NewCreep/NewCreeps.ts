@@ -9,7 +9,7 @@ export const newCreeps = {
     }
     // if harvesters less than sources, create it
     let harvesters: Creep[] = _.filter(Game.creeps, (creep) => creep.memory.role == 'harvester');
-    let sourcesLength: number = Game.spawns['Spawn1'].room.find(FIND_SOURCES).length;
+    let sourcesLength: number = global.sources.length;
     if (harvesters.length < sourcesLength) {
       newHarvester(harvesters, sourcesLength);
       return 0;

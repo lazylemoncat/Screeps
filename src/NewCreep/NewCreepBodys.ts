@@ -26,6 +26,7 @@ export const newCreepBody = function(role: String): BodyPartConstant[] {
         capacity -= 4;
         for (; capacity >= 5; capacity -= 5) {
           bodys.push(WORK, WORK, MOVE);
+          if (bodys.length == 9) break;
         }
         return bodys;
       }
@@ -33,13 +34,15 @@ export const newCreepBody = function(role: String): BodyPartConstant[] {
         let bodys: BodyPartConstant[] = [];
         for (capacity /= 50; capacity >= 4; capacity -= 4) {
           bodys.push(WORK, CARRY, MOVE);
+          if (bodys.length == 9) break;
         }
         return bodys;
       }
       case 'transfer' : {
         let bodys: BodyPartConstant[] = [];
-        for (capacity /= 50; capacity >= 3; capacity -= 3) {
-          bodys.push(MOVE, CARRY, CARRY);
+        for (capacity /= 50; capacity >= 2; capacity -= 2) {
+          bodys.push(MOVE, CARRY);
+          if (bodys.length == 12) break;
         }
         return bodys;
       }
@@ -47,6 +50,7 @@ export const newCreepBody = function(role: String): BodyPartConstant[] {
         let bodys: BodyPartConstant[] = [];
         for (capacity /= 50; capacity >= 5; capacity -= 5) {
           bodys.push(WORK, CARRY, MOVE, MOVE);
+          if (bodys.length == 12) break;
         }
         return bodys;
       }

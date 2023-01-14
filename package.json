@@ -17,6 +17,7 @@
     "typescript": "^4.9.4"
   },
   "dependencies": {
-    "@types/lodash": "^3.10.1"
+    "@types/lodash": "^3.10.1",
+    "@types/node": "^18.11.18"
   }
 }

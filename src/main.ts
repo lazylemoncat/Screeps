@@ -10,7 +10,12 @@ import { structureTower } from './Structure/StructureTower';
 
 import { newCreeps } from './NewCreep/NewCreeps';
 
+import { refreshGlobal } from './global/RefreshGlobal';
+
 export const loop = function (): void {
+  if (Game.time % 100 == 0) {
+    refreshGlobal();
+  }
   // create new creeps
   newCreeps.run()
   // run creeps

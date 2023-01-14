@@ -30,9 +30,8 @@ function backRoom(creep: Creep): number {
 function goHarvest(creep: Creep): void {
   let targetSource: _HasId = Game.getObjectById(creep.memory.sourcesPosition);
   if ((targetSource as Source).energy == 0) return;
-  let container = creep.room.find(FIND_STRUCTURES, {filter:
-    (structure) => structure.structureType == STRUCTURE_CONTAINER &&
-    structure.pos.isNearTo(targetSource as Source)});
+  let container = global.containers.filter(structure =>
+    structure.pos.isNearTo(targetSource as Source));
   if (container[0] != undefined &&
     (container[0] as StructureContainer).store.getFreeCapacity(RESOURCE_ENERGY) == 0 &&
     creep.getActiveBodyparts(CARRY) == 0) return;

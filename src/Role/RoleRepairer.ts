@@ -2,6 +2,7 @@ export const roleRepairer = {
   run: function(creep: Creep): void {
     if(creep.memory.repairing && creep.store[RESOURCE_ENERGY] == 0) {
       creep.memory.repairing = false;
+      global.repairerTarget = null;
     } else if(!creep.memory.repairing && creep.store.getFreeCapacity() == 0) {
       creep.memory.repairing = true;
     }
@@ -22,12 +23,29 @@ function backRoom(creep: Creep): void {
 }
 
 function goRepair(creep: Creep): void {
+  if (global.repairerTarget != null && 
+    global.repairerTarget.hits < global.repairerTarget.hitsMax) {
+      if (creep.repair(global.repairerTarget) == ERR_NOT_IN_RANGE) {
+        creep.moveTo(global.repairerTarget);
+      }
+  }
   let injured: AnyStructure[] = creep.room.find(FIND_STRUCTURES, {
     filter: object => object.hits < object.hitsMax});
-  let targetTo: AnyStructure[] = injured.filter(structure => structure.structureType != STRUCTURE_WALL);
+  let targetTo: AnyStructure[];
+  if (creep.room.find(FIND_STRUCTURES,{filter:
+    structure => structure.structureType == STRUCTURE_TOWER})[0] != undefined){
+      targetTo = injured.filter(structure => structure.structureType != STRUCTURE_WALL);
+  }
   if (targetTo[0] == undefined) {
     targetTo = injured.sort((a,b) => a.hits - b.hits);
   }
+  if (creep.store[RESOURCE_ENERGY] < creep.store.getCapacity(RESOURCE_ENERGY) / 2 &&
+    creep.pos.inRangeTo(targetTo[0], 10)){
+      creep.memory.repairing = false;
+      global.repairerTarget = null;
+      return;
+  }
+  global.repairerTarget = targetTo[0];
   if (creep.repair(targetTo[0]) == ERR_NOT_IN_RANGE) {
     creep.moveTo(targetTo[0]);
   }

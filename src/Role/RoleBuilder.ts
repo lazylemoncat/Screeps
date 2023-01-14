@@ -29,6 +29,11 @@ function backRoom(creep: Creep): number {
 function goBuild(creep: Creep): void {
   let target: ConstructionSite[] = creep.room.find(FIND_CONSTRUCTION_SITES);
     if(target[0]) {
+      if (creep.store[RESOURCE_ENERGY] < creep.store.getCapacity(RESOURCE_ENERGY) / 2 &&
+        creep.pos.inRangeTo(target[0], 10)){
+        creep.memory.building = false;
+        return;
+      }
       if(creep.build(target[0]) == ERR_NOT_IN_RANGE) {
         creep.moveTo(target[0], {visualizePathStyle: {stroke: '#ffffff'}});
       }
@@ -47,8 +52,7 @@ function goGetEnergy(creep: Creep): void {
     }
     return;
   }
-  let sources: Source[] = creep.room.find(FIND_SOURCES, {filter :
-    (sources) => sources.energy > 0});
+  let sources: Source[] = global.sources.filter(source => source.energy > 0);
   if (creep.harvest(sources[0]) == ERR_NOT_IN_RANGE) {
     if (creep.moveTo(sources[0]) == ERR_NO_PATH) {
       if (creep.harvest(sources[1]) == ERR_NOT_IN_RANGE) {

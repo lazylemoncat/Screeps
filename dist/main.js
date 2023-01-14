@@ -34,8 +34,7 @@ function goHarvest(creep) {
     let targetSource = Game.getObjectById(creep.memory.sourcesPosition);
     if (targetSource.energy == 0)
         return;
-    let container = creep.room.find(FIND_STRUCTURES, { filter: (structure) => structure.structureType == STRUCTURE_CONTAINER &&
-            structure.pos.isNearTo(targetSource) });
+    let container = global.containers.filter(structure => structure.pos.isNearTo(targetSource));
     if (container[0] != undefined &&
         container[0].store.getFreeCapacity(RESOURCE_ENERGY) == 0 &&
         creep.getActiveBodyparts(CARRY) == 0)
@@ -112,6 +111,11 @@ function backRoom$2(creep) {
 function goBuild(creep) {
     let target = creep.room.find(FIND_CONSTRUCTION_SITES);
     if (target[0]) {
+        if (creep.store[RESOURCE_ENERGY] < creep.store.getCapacity(RESOURCE_ENERGY) / 2 &&
+            creep.pos.inRangeTo(target[0], 10)) {
+            creep.memory.building = false;
+            return;
+        }
         if (creep.build(target[0]) == ERR_NOT_IN_RANGE) {
             creep.moveTo(target[0], { visualizePathStyle: { stroke: '#ffffff' } });
         }
@@ -129,7 +133,7 @@ function goGetEnergy$2(creep) {
         }
         return;
     }
-    let sources = creep.room.find(FIND_SOURCES, { filter: (sources) => sources.energy > 0 });
+    let sources = global.sources.filter(source => source.energy > 0);
     if (creep.harvest(sources[0]) == ERR_NOT_IN_RANGE) {
         if (creep.moveTo(sources[0]) == ERR_NO_PATH) {
             if (creep.harvest(sources[1]) == ERR_NOT_IN_RANGE) {
@@ -248,6 +252,7 @@ const roleRepairer = {
     run: function (creep) {
         if (creep.memory.repairing && creep.store[RESOURCE_ENERGY] == 0) {
             creep.memory.repairing = false;
+            global.repairerTarget = null;
         }
         else if (!creep.memory.repairing && creep.store.getFreeCapacity() == 0) {
             creep.memory.repairing = true;
@@ -267,13 +272,29 @@ function backRoom$1(creep) {
     }
 }
 function goRepair(creep) {
+    if (global.repairerTarget != null &&
+        global.repairerTarget.hits < global.repairerTarget.hitsMax) {
+        if (creep.repair(global.repairerTarget) == ERR_NOT_IN_RANGE) {
+            creep.moveTo(global.repairerTarget);
+        }
+    }
     let injured = creep.room.find(FIND_STRUCTURES, {
         filter: object => object.hits < object.hitsMax
     });
-    let targetTo = injured.filter(structure => structure.structureType != STRUCTURE_WALL);
+    let targetTo;
+    if (creep.room.find(FIND_STRUCTURES, { filter: structure => structure.structureType == STRUCTURE_TOWER })[0] != undefined) {
+        targetTo = injured.filter(structure => structure.structureType != STRUCTURE_WALL);
+    }
     if (targetTo[0] == undefined) {
         targetTo = injured.sort((a, b) => a.hits - b.hits);
     }
+    if (creep.store[RESOURCE_ENERGY] < creep.store.getCapacity(RESOURCE_ENERGY) / 2 &&
+        creep.pos.inRangeTo(targetTo[0], 10)) {
+        creep.memory.repairing = false;
+        global.repairerTarget = null;
+        return;
+    }
+    global.repairerTarget = targetTo[0];
     if (creep.repair(targetTo[0]) == ERR_NOT_IN_RANGE) {
         creep.moveTo(targetTo[0]);
     }
@@ -355,10 +376,11 @@ function goTransfer(creep) {
 function goWithdraw(creep) {
     let targetSource = Game.getObjectById(creep.memory.sourcesPosition);
     let targetContainer = targetSource.pos.findClosestByPath(FIND_STRUCTURES, { filter: (structure) => (structure.structureType == STRUCTURE_CONTAINER) });
-    if (targetContainer == null || targetContainer.store[RESOURCE_ENERGY] == 0) {
+    if (targetContainer == null ||
+        targetContainer.store[RESOURCE_ENERGY] <= creep.store.getFreeCapacity[RESOURCE_ENERGY]) {
         targetContainer = creep.pos.findClosestByPath(FIND_STRUCTURES, { filter: (structure) => (structure.structureType == STRUCTURE_CONTAINER ||
                 structure.structureType == STRUCTURE_STORAGE) &&
-                structure.store[RESOURCE_ENERGY] > 0
+                structure.store[RESOURCE_ENERGY] > creep.store.getFreeCapacity[RESOURCE_ENERGY]
         });
     }
     if (creep.withdraw(targetContainer, RESOURCE_ENERGY) == ERR_NOT_IN_RANGE) {
@@ -423,6 +445,8 @@ const newCreepBody = function (role) {
                 capacity -= 4;
                 for (; capacity >= 5; capacity -= 5) {
                     bodys.push(WORK, WORK, MOVE);
+                    if (bodys.length == 9)
+                        break;
                 }
                 return bodys;
             }
@@ -430,13 +454,17 @@ const newCreepBody = function (role) {
                 let bodys = [];
                 for (capacity /= 50; capacity >= 4; capacity -= 4) {
                     bodys.push(WORK, CARRY, MOVE);
+                    if (bodys.length == 9)
+                        break;
                 }
                 return bodys;
             }
             case 'transfer': {
                 let bodys = [];
-                for (capacity /= 50; capacity >= 3; capacity -= 3) {
-                    bodys.push(MOVE, CARRY, CARRY);
+                for (capacity /= 50; capacity >= 2; capacity -= 2) {
+                    bodys.push(MOVE, CARRY);
+                    if (bodys.length == 12)
+                        break;
                 }
                 return bodys;
             }
@@ -444,6 +472,8 @@ const newCreepBody = function (role) {
                 let bodys = [];
                 for (capacity /= 50; capacity >= 5; capacity -= 5) {
                     bodys.push(WORK, CARRY, MOVE, MOVE);
+                    if (bodys.length == 12)
+                        break;
                 }
                 return bodys;
             }
@@ -460,7 +490,7 @@ const newCreeps = {
         }
         // if harvesters less than sources, create it
         let harvesters = _.filter(Game.creeps, (creep) => creep.memory.role == 'harvester');
-        let sourcesLength = Game.spawns['Spawn1'].room.find(FIND_SOURCES).length;
+        let sourcesLength = global.sources.length;
         if (harvesters.length < sourcesLength) {
             newHarvester(harvesters, sourcesLength);
             return 0;
@@ -569,7 +599,29 @@ function newRepairer() {
     });
 }
 
+// get Source[]
+global.sources = Game.spawns['Spawn1'].room.find(FIND_SOURCES);
+// get Container[]
+global.containers = Game.spawns['Spawn1'].room.find(FIND_STRUCTURES, { filter: structure => structure.structureType == STRUCTURE_CONTAINER
+});
+
+// repairer
+global.repairerTarget = null;
+
+const refreshGlobal = function () {
+    // GlobalStructure.ts
+    // get Container[]
+    global.containers = Game.spawns['Spawn1'].room.find(FIND_STRUCTURES, { filter: structure => structure.structureType == STRUCTURE_CONTAINER
+    });
+    // GlobalRole.ts
+    // repairer
+    global.repairerTarget = null;
+};
+
 const loop = function () {
+    if (Game.time % 100 == 0) {
+        refreshGlobal();
+    }
     // create new creeps
     newCreeps.run();
     // run creeps
