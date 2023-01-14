@@ -5,6 +5,7 @@ import { roleAttacker } from './Role/RoleAttacker';
 import { roleHealer } from './Role/RoleHealer';
 import { roleRepairer } from './Role/RoleRepairer';
 import { roleTransfer } from './Role/RoleTransfer';
+import { roleClaimer } from './Role/RoleClaimer';
 
 import { structureTower } from './Structure/StructureTower';
 
@@ -41,6 +42,9 @@ export const loop = function (): void {
     }
     else if (creep.memory.role == 'healer') {
       roleHealer.run(creep);
+    }
+    else if (creep.memory.role == 'claimer') {
+      roleClaimer.run(creep);
     }
   }
   // run structures

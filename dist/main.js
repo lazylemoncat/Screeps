@@ -274,9 +274,15 @@ function backRoom$1(creep) {
 function goRepair(creep) {
     if (global.repairerTarget != null &&
         global.repairerTarget.hits < global.repairerTarget.hitsMax) {
+        if (Game.getObjectById(global.repairerTarget.id).hits ==
+            Game.getObjectById(global.repairerTarget.id).hitsMax) {
+            global.repairerTarget = null;
+            return;
+        }
         if (creep.repair(global.repairerTarget) == ERR_NOT_IN_RANGE) {
             creep.moveTo(global.repairerTarget);
         }
+        return;
     }
     let injured = creep.room.find(FIND_STRUCTURES, {
         filter: object => object.hits < object.hitsMax
@@ -380,13 +386,28 @@ function goWithdraw(creep) {
         targetContainer.store[RESOURCE_ENERGY] <= creep.store.getFreeCapacity[RESOURCE_ENERGY]) {
         targetContainer = creep.pos.findClosestByPath(FIND_STRUCTURES, { filter: (structure) => (structure.structureType == STRUCTURE_CONTAINER ||
                 structure.structureType == STRUCTURE_STORAGE) &&
-                structure.store[RESOURCE_ENERGY] > creep.store.getFreeCapacity[RESOURCE_ENERGY]
+                structure.store[RESOURCE_ENERGY] > creep.store.getFreeCapacity(RESOURCE_ENERGY)
         });
     }
     if (creep.withdraw(targetContainer, RESOURCE_ENERGY) == ERR_NOT_IN_RANGE) {
         creep.moveTo(targetContainer);
     }
 }
+
+const roleClaimer = {
+    run: function (creep) {
+        let pos = new RoomPosition(1, 1, 'W59S26');
+        if (creep.pos.roomName != pos.roomName) {
+            creep.moveTo(pos.x, pos.y);
+            return;
+        }
+        if (creep.room.controller) {
+            if (creep.claimController(creep.room.controller) == ERR_NOT_IN_RANGE) {
+                creep.moveTo(creep.room.controller);
+            }
+        }
+    }
+};
 
 const structureTower = {
     run: function (tower) {
@@ -647,6 +668,9 @@ const loop = function () {
         }
         else if (creep.memory.role == 'healer') {
             roleHealer.run(creep);
+        }
+        else if (creep.memory.role == 'claimer') {
+            roleClaimer.run(creep);
         }
     }
     // run structures

@@ -66,11 +66,11 @@ function goWithdraw(creep: Creep): void {
   let targetContainer: AnyStructure = (targetSource as Source).pos.findClosestByPath(FIND_STRUCTURES, {filter:
     (structure) => (structure.structureType == STRUCTURE_CONTAINER)});
   if (targetContainer == null || 
-    (targetContainer as StructureContainer).store[RESOURCE_ENERGY] <= creep.store.getFreeCapacity[RESOURCE_ENERGY]) {
+      (targetContainer as StructureContainer).store[RESOURCE_ENERGY] <= creep.store.getFreeCapacity[RESOURCE_ENERGY]) {
     targetContainer = creep.pos.findClosestByPath(FIND_STRUCTURES, {filter:
-      (structure) => (structure.structureType == STRUCTURE_CONTAINER ||
-      structure.structureType == STRUCTURE_STORAGE)&&
-      structure.store[RESOURCE_ENERGY] > creep.store.getFreeCapacity[RESOURCE_ENERGY]
+    (structure) => (structure.structureType == STRUCTURE_CONTAINER ||
+    structure.structureType == STRUCTURE_STORAGE)&&
+    structure.store[RESOURCE_ENERGY] > creep.store.getFreeCapacity(RESOURCE_ENERGY)
     });
   }
   if (creep.withdraw(targetContainer, RESOURCE_ENERGY) == ERR_NOT_IN_RANGE) {

@@ -24,17 +24,23 @@ function backRoom(creep: Creep): void {
 
 function goRepair(creep: Creep): void {
   if (global.repairerTarget != null && 
-    global.repairerTarget.hits < global.repairerTarget.hitsMax) {
-      if (creep.repair(global.repairerTarget) == ERR_NOT_IN_RANGE) {
-        creep.moveTo(global.repairerTarget);
-      }
+      global.repairerTarget.hits < global.repairerTarget.hitsMax) {
+    if ((Game.getObjectById(global.repairerTarget.id) as AnyStructure).hits ==
+        (Game.getObjectById(global.repairerTarget.id) as AnyStructure).hitsMax) {
+      global.repairerTarget = null;
+      return;
+    }
+    if (creep.repair(global.repairerTarget) == ERR_NOT_IN_RANGE) {
+      creep.moveTo(global.repairerTarget);
+    }
+    return;
   }
   let injured: AnyStructure[] = creep.room.find(FIND_STRUCTURES, {
     filter: object => object.hits < object.hitsMax});
   let targetTo: AnyStructure[];
   if (creep.room.find(FIND_STRUCTURES,{filter:
-    structure => structure.structureType == STRUCTURE_TOWER})[0] != undefined){
-      targetTo = injured.filter(structure => structure.structureType != STRUCTURE_WALL);
+      structure => structure.structureType == STRUCTURE_TOWER})[0] != undefined){
+    targetTo = injured.filter(structure => structure.structureType != STRUCTURE_WALL);
   }
   if (targetTo[0] == undefined) {
     targetTo = injured.sort((a,b) => a.hits - b.hits);
