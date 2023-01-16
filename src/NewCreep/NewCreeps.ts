@@ -1,6 +1,12 @@
+import { globalStructure } from "@/global/GlobalStructure";
 import { newCreepBody } from "./NewCreepBodys";
 
 export const newCreeps = {
+  /**
+   * 
+   * @returns { number } 0 | -1
+   * @author LazyKitty
+   */
   run: function(): number {
     // delete dead creeps's memory
     deleteDead();
@@ -9,7 +15,7 @@ export const newCreeps = {
     }
     // if harvesters less than sources, create it
     let harvesters: Creep[] = _.filter(Game.creeps, (creep) => creep.memory.role == 'harvester');
-    let sourcesLength: number = global.sources.length;
+    let sourcesLength: number = globalStructure.sources.length;
     if (harvesters.length < sourcesLength) {
       newHarvester(harvesters, sourcesLength);
       return 0;
@@ -23,21 +29,23 @@ export const newCreeps = {
     }
     // if upgrader less than 1, creat it
     let upgraders: Creep[] = _.filter(Game.creeps, (creep) => creep.memory.role == 'upgrader');
-    let upgradersNum = sites.length > 0 ? 1 : 3;
+    let storageEnergy: number = Game.spawns.Spawn1.room.storage.store[RESOURCE_ENERGY];
+    let upgradersNum: number = sites.length > 0 && storageEnergy < 100000 ? 1 : 2;
     if (upgraders.length < upgradersNum) {
       newUpgrader();
       return 0;
     }
     // if transfers less than sources's length * 2, creat it
+    // if link exist, transfer's number equal sources's length
     let transfers: Creep[] = _.filter(Game.creeps, (creep) => creep.memory.role == 'transfer');
-    let containers: StructureContainer[] = Game.spawns.Spawn1.room.find(FIND_STRUCTURES,{filter:(structure) => structure.structureType == STRUCTURE_CONTAINER});
-    if (containers.length > 1 && transfers.length < sourcesLength * 2) {
+    let transferNum: number = globalStructure.links[0] == undefined ? sourcesLength: sourcesLength * 2;
+    if (globalStructure.containers.length > 1 && transfers.length < transferNum) {
       newTransfer(transfers, sourcesLength);
       return 0;
     }
     // if repairer less than 1, creat it
     let repairer: Creep[] = _.filter(Game.creeps, (creep) => creep.memory.role == 'repairer');
-    if (containers.length > 1 && repairer.length < 1) {
+    if (globalStructure.containers.length > 1 && repairer.length < 1) {
       newRepairer();
       return 0; 
     }
@@ -59,7 +67,7 @@ function newHarvester(harvesters: Creep[], sourcesLength: number) {
   let posFlag = 0;
   for (let i = 0; i < sourcesLength; ++i) {
     for (let j = 0; j < harvesters.length; ++j) {
-      if (Game.spawns.Spawn1.room.find(FIND_SOURCES)[i].id == harvesters[j].memory.sourcesPosition) {
+      if (i == harvesters[j].memory.sourcesPosition) {
         posFlag += 1;
         break;
       }
@@ -67,10 +75,8 @@ function newHarvester(harvesters: Creep[], sourcesLength: number) {
     if (posFlag == i) break;
   }
   if (posFlag >= sourcesLength) return;
-  let source: Source[] = Game.spawns.Spawn1.room.find(FIND_SOURCES);
-  let sourcesPosition: String = source[posFlag].id;
   Game.spawns['Spawn1'].spawnCreep(newCreepBody('harvester'), newName, {
-    memory: {role: 'harvester', sourcesPosition: sourcesPosition}});
+    memory: {role: 'harvester', sourcesPosition: posFlag}});
 }
 
 function newUpgrader() {
@@ -88,18 +94,17 @@ function newBuilder() {
 function newTransfer(transfer: Creep[], sourcesLength: number) {
   let newName: string = 'Transfer' + Game.time;
   let posFlag: number = 0;
-  let source: Source[] = Game.spawns.Spawn1.room.find(FIND_SOURCES);
   let temp: number = 0;
+  let transferNum = globalStructure.links[0] == undefined ? 1: 2;
   for (let i = 0; i < sourcesLength; ++i) {
     for (let j = 0; j < transfer.length; ++j) {
-      if (transfer[j].memory.sourcesPosition == source[i].id) {
+      if (transfer[j].memory.sourcesPosition == i) {
         temp += 1;
-        if (temp == 2) {
+        if (temp == transferNum) {
           posFlag += 1;
           temp = 0;
           break;
         }
-        
       }
     }
     if (posFlag == i) break;
@@ -107,7 +112,7 @@ function newTransfer(transfer: Creep[], sourcesLength: number) {
   if (posFlag >= sourcesLength) return;
   Game.spawns['Spawn1'].spawnCreep(newCreepBody('transfer'), newName, {memory: {
     role: 'transfer', 
-    sourcesPosition: source[posFlag].id,
+    sourcesPosition: posFlag,
   }});
 }
 

@@ -46,7 +46,7 @@ function goRepair(creep: Creep): void {
     targetTo = injured.sort((a,b) => a.hits - b.hits);
   }
   if (creep.store[RESOURCE_ENERGY] < creep.store.getCapacity(RESOURCE_ENERGY) / 2 &&
-    creep.pos.inRangeTo(targetTo[0], 10)){
+      !creep.pos.inRangeTo(targetTo[0], 10)){
       creep.memory.repairing = false;
       global.repairerTarget = null;
       return;

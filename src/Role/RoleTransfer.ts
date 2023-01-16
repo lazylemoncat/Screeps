@@ -1,3 +1,5 @@
+import { globalStructure } from "@/global/GlobalStructure";
+
 export const roleTransfer = {
   run: function(creep: Creep): void {
     if(creep.memory.transfering && creep.store[RESOURCE_ENERGY] == 0) {
@@ -35,6 +37,10 @@ function goTransfer(creep: Creep): void {
     structure.structureType == STRUCTURE_SPAWN) &&
     structure.store.getFreeCapacity(RESOURCE_ENERGY) > 0 );
   if (target[0] != undefined) {
+    let temp: AnyStructure = creep.pos.findInRange(target, 3)[0];
+    if (temp != undefined) {
+      target[0] = temp;
+    }
     if (creep.transfer(target[0], RESOURCE_ENERGY) == ERR_NOT_IN_RANGE) {
       creep.moveTo(target[0]);
     }
@@ -45,6 +51,10 @@ function goTransfer(creep: Creep): void {
     (structure.structureType == STRUCTURE_TOWER) &&
     structure.store.getFreeCapacity(RESOURCE_ENERGY) > 0);
   if (target[0] != undefined) {
+    let temp: AnyStructure = creep.pos.findInRange(target, 6)[0];
+    if (temp != undefined) {
+      target[0] = temp;
+    }
     if (creep.transfer(target[0], RESOURCE_ENERGY) == ERR_NOT_IN_RANGE) {
       creep.moveTo(target[0]);
     }
@@ -52,25 +62,25 @@ function goTransfer(creep: Creep): void {
   }
 
   target = structures.filter(structure =>
-    (structure.structureType == STRUCTURE_CONTAINER &&
+    ((structure.structureType == STRUCTURE_CONTAINER &&
     structure.pos.isNearTo(structure.pos.findClosestByPath(FIND_SOURCES)) == false) ||
-    structure.structureType == STRUCTURE_STORAGE &&
-    structure.store.getFreeCapacity(RESOURCE_ENERGY) > 0);
+    structure.structureType == STRUCTURE_STORAGE) &&
+    structure.store.getFreeCapacity(RESOURCE_ENERGY) >= creep.store[RESOURCE_ENERGY]);
   if (creep.transfer(target[0], RESOURCE_ENERGY) == ERR_NOT_IN_RANGE) {
     creep.moveTo(target[0]);
   }
 }
 
 function goWithdraw(creep: Creep): void {
-  let targetSource: _HasId = Game.getObjectById(creep.memory.sourcesPosition);
-  let targetContainer: AnyStructure = (targetSource as Source).pos.findClosestByPath(FIND_STRUCTURES, {filter:
+  let targetSource: Source = globalStructure.sources[creep.memory.sourcesPosition];
+  let targetContainer: AnyStructure = targetSource.pos.findClosestByPath(FIND_STRUCTURES, {filter:
     (structure) => (structure.structureType == STRUCTURE_CONTAINER)});
   if (targetContainer == null || 
-      (targetContainer as StructureContainer).store[RESOURCE_ENERGY] <= creep.store.getFreeCapacity[RESOURCE_ENERGY]) {
+      (targetContainer as StructureContainer).store[RESOURCE_ENERGY] <= creep.store.getFreeCapacity(RESOURCE_ENERGY)) {
     targetContainer = creep.pos.findClosestByPath(FIND_STRUCTURES, {filter:
     (structure) => (structure.structureType == STRUCTURE_CONTAINER ||
     structure.structureType == STRUCTURE_STORAGE)&&
-    structure.store[RESOURCE_ENERGY] > creep.store.getFreeCapacity(RESOURCE_ENERGY)
+    structure.store[RESOURCE_ENERGY] >= creep.store.getFreeCapacity(RESOURCE_ENERGY)
     });
   }
   if (creep.withdraw(targetContainer, RESOURCE_ENERGY) == ERR_NOT_IN_RANGE) {

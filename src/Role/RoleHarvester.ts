@@ -1,19 +1,25 @@
+import { globalStructure } from "@/global/GlobalStructure";
+import { newCreepBody } from "../NewCreep/NewCreepBodys";
+
 export const roleHarvester = {
   run: function(creep: Creep): void {
     // if harvester went into the wrong room
     if (backRoom(creep) == 0) {
       return;
     }
-    if(!creep.memory.harvesting && creep.store[RESOURCE_ENERGY] == 0) {
+    if (!creep.memory.harvesting && creep.store[RESOURCE_ENERGY] == 0) {
       creep.memory.harvesting = true;
     } else if(creep.memory.harvesting && creep.store.getFreeCapacity() == 0) {
       creep.memory.harvesting = false;
     }
     // if harvester's free capacity more than 0, harvest energy
-    if(creep.memory.harvesting) {
+    if (creep.memory.harvesting) {
       goHarvest(creep);
     } else {
       transferEnergy(creep);
+    }
+    if (creep.ticksToLive <= 30 && !creep.memory.dying) {
+      newOne(creep);
     }
 	}
 };
@@ -28,26 +34,49 @@ function backRoom(creep: Creep): number {
 }
 
 function goHarvest(creep: Creep): void {
-  let targetSource: _HasId = Game.getObjectById(creep.memory.sourcesPosition);
-  if ((targetSource as Source).energy == 0) return;
-  let container = global.containers.filter(structure =>
+  let targetSource: Source = globalStructure.sources[creep.memory.sourcesPosition];
+  if (targetSource.energy == 0) return;
+  let container = globalStructure.containers.filter(structure =>
     structure.pos.isNearTo(targetSource as Source));
-  if (container[0] != undefined &&
-    (container[0] as StructureContainer).store.getFreeCapacity(RESOURCE_ENERGY) == 0 &&
-    creep.getActiveBodyparts(CARRY) == 0) return;
-  if (container[0] != undefined && creep.pos != container[0].pos) {
-    creep.moveTo(container[0]);
+  if (container[0] != undefined) {
+    if (container[0].store.getFreeCapacity(RESOURCE_ENERGY) == 0 &&
+        creep.getActiveBodyparts(CARRY) == 0) {
+      return;
+    } 
+    if (!creep.pos.isEqualTo(container[0]) &&
+        creep.pos.isNearTo(targetSource)) {
+      creep.moveTo(container[0]);
+      return;
+    }
   }
-  if(creep.harvest(targetSource as Source) == ERR_NOT_IN_RANGE) {
-    creep.moveTo(targetSource as Source);
+  
+  if(creep.harvest(targetSource) == ERR_NOT_IN_RANGE) {
+    if (global.harvestPath[creep.memory.sourcesPosition] == undefined) {
+      global.harvestPath[creep.memory.sourcesPosition] = creep.room.findPath(creep.pos, targetSource.pos);
+    }
+    creep.moveByPath(global.harvestPath[creep.memory.sourcesPosition]);
   }
 }
 
 function transferEnergy(creep: Creep): void {
-  let source: _HasId = Game.getObjectById(creep.memory.sourcesPosition);
-  let container: StructureContainer = (source as Source).pos.findClosestByPath(FIND_STRUCTURES, {
-    filter: (structure) => structure.structureType == STRUCTURE_CONTAINER
-  });
+  let source: Source = globalStructure.sources[creep.memory.sourcesPosition];
+
+  if (globalStructure.links[0] != undefined && creep.getActiveBodyparts(CARRY) >= 1) {
+    let link: StructureLink[] = creep.pos.findInRange(globalStructure.fromLinks, 3).filter(
+      link => link.store.getFreeCapacity(RESOURCE_ENERGY) > 0
+    );
+    if (link[0] != undefined) {
+      if (creep.transfer(link[0], RESOURCE_ENERGY) == ERR_NOT_IN_RANGE) {
+        creep.moveTo(link[0]);
+      }
+      return;
+    }
+  }
+  
+  // let container: StructureContainer = source.pos.findClosestByPath(FIND_STRUCTURES, {
+  //   filter: (structure) => structure.structureType == STRUCTURE_CONTAINER
+  // });
+  let container: StructureContainer = source.pos.findInRange(globalStructure.containers, 1)[0];
   if (container != undefined && container.store.getFreeCapacity(RESOURCE_ENERGY) > 0) {
     if (creep.transfer(container, RESOURCE_ENERGY) == ERR_NOT_IN_RANGE) {
       creep.moveTo(container);
@@ -76,5 +105,16 @@ function transferEnergy(creep: Creep): void {
 
   if (creep.transfer(target, RESOURCE_ENERGY) == ERR_NOT_IN_RANGE) {
     creep.moveTo(target);
+  }
+}
+
+function newOne(creep: Creep): void {
+  let spawns: StructureSpawn[] = creep.room.find(FIND_STRUCTURES, {filter: structure =>
+    structure.structureType == STRUCTURE_SPAWN});
+  let newName: string = 'Harvester' + Game.time;
+  let error: number = Game.spawns[spawns[0].name].spawnCreep(newCreepBody('harvester'), 
+    newName, {memory: {role: 'harvester', sourcesPosition: creep.memory.sourcesPosition}});
+  if (error == OK) {
+    creep.memory.dying = true;
   }
 }

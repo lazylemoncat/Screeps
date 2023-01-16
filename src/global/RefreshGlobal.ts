@@ -1,13 +1,17 @@
-import './GlobalStructure';
+import { globalStructure } from './GlobalStructure';
 import './GlobalRole';
-
+/**
+ * @file to refresh global veriables
+ * @author LazyKitty
+ */
 export const refreshGlobal = function() {
   // GlobalStructure.ts
-  // get Container[]
-  global.containers = Game.spawns['Spawn1'].room.find(FIND_STRUCTURES,{filter:
-    structure => structure.structureType == STRUCTURE_CONTAINER
-  });
+  if (Game.spawns.Spawn1 != undefined) {
+    globalStructure.refresh();
+  }
   // GlobalRole.ts
+  // harvester
+  global.harvestPath = [];
   // repairer
   global.repairerTarget = null;
 }
