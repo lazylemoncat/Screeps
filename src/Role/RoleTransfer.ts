@@ -73,9 +73,10 @@ function goTransfer(creep: Creep): void {
 
 function goWithdraw(creep: Creep): void {
   if (globalStructure.toLinks.length > 0) {
-    if (globalStructure.toLinks[0].store[RESOURCE_ENERGY] >= 100) {
-      if (creep.withdraw(globalStructure.toLinks[0], RESOURCE_ENERGY) == ERR_NOT_IN_RANGE) {
-        creep.moveTo(globalStructure.toLinks[0]);
+    let link = Game.getObjectById(globalStructure.toLinks[0].id);
+    if (link.store[RESOURCE_ENERGY] >= 100) {
+      if (creep.withdraw(link, RESOURCE_ENERGY) == ERR_NOT_IN_RANGE) {
+        creep.moveTo(link);
       }
       return;
     }

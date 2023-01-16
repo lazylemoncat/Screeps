@@ -62,16 +62,16 @@ function goHarvest(creep: Creep): void {
 
 function transferEnergy(creep: Creep): void {
   let source: Source = globalStructure.sources[creep.memory.sourcesPosition];
-
-  if (globalStructure.links[0] != undefined && creep.getActiveBodyparts(CARRY) >= 1) {
-    let link: StructureLink[] = creep.pos.findInRange(globalStructure.fromLinks, 3).filter(
-      link => link.store.getFreeCapacity(RESOURCE_ENERGY) > 0
-    );
+  if (globalStructure.fromLinks[0] != undefined && creep.getActiveBodyparts(CARRY) >= 1) {
+    let link: StructureLink[] = creep.pos.findInRange(globalStructure.fromLinks, 3);
     if (link[0] != undefined) {
-      if (creep.transfer(link[0], RESOURCE_ENERGY) == ERR_NOT_IN_RANGE) {
-        creep.moveTo(link[0]);
+      let target = Game.getObjectById(link[0].id);
+      if (target.store.getFreeCapacity(RESOURCE_ENERGY) >= 0) {
+        if (creep.transfer(link[0], RESOURCE_ENERGY) == ERR_NOT_IN_RANGE) {
+          creep.moveTo(link[0]);
+        }
+        return;
       }
-      return;
     }
   }
   
