@@ -42,7 +42,7 @@ function goRepair(creep: Creep): void {
       structure => structure.structureType == STRUCTURE_TOWER})[0] != undefined){
     targetTo = injured.filter(structure => structure.structureType != STRUCTURE_WALL);
   }
-  if (targetTo[0] == undefined) {
+  if (targetTo == undefined) {
     targetTo = injured.sort((a,b) => a.hits - b.hits);
   }
   if (creep.store[RESOURCE_ENERGY] < creep.store.getCapacity(RESOURCE_ENERGY) / 2 &&

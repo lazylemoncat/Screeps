@@ -10,7 +10,9 @@ export const roleHarvester = {
     if (!creep.memory.harvesting && creep.store[RESOURCE_ENERGY] == 0) {
       creep.memory.harvesting = true;
     } else if(creep.memory.harvesting && creep.store.getFreeCapacity() == 0) {
-      creep.memory.harvesting = false;
+      if (transfer(creep) != true) {
+        creep.memory.harvesting = false;
+      }
     }
     // if harvester's free capacity more than 0, harvest energy
     if (creep.memory.harvesting) {
@@ -73,9 +75,6 @@ function transferEnergy(creep: Creep): void {
     }
   }
   
-  // let container: StructureContainer = source.pos.findClosestByPath(FIND_STRUCTURES, {
-  //   filter: (structure) => structure.structureType == STRUCTURE_CONTAINER
-  // });
   let container: StructureContainer = source.pos.findInRange(globalStructure.containers, 1)[0];
   if (container != undefined && container.store.getFreeCapacity(RESOURCE_ENERGY) > 0) {
     if (creep.transfer(container, RESOURCE_ENERGY) == ERR_NOT_IN_RANGE) {
@@ -117,4 +116,27 @@ function newOne(creep: Creep): void {
   if (error == OK) {
     creep.memory.dying = true;
   }
+}
+
+function transfer(creep: Creep): boolean {
+  let link: StructureLink = creep.pos.findInRange(globalStructure.fromLinks, 1)[0];
+  if (link != undefined) {
+    if (creep.transfer(link, RESOURCE_ENERGY) == OK) {
+      return true;
+    } else {
+      return false;
+    }
+  } else {
+    let source: Source = globalStructure.sources[creep.memory.sourcesPosition];
+    let container: StructureContainer = globalStructure.containers.filter(structure =>
+      structure.pos.isNearTo(source))[0];
+    if (container != undefined) {
+      if (creep.transfer(container, RESOURCE_ENERGY) == OK) {
+        return true;
+      } else {
+        return false;
+      }
+    }
+  }
+  return false;
 }

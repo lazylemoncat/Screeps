@@ -72,6 +72,14 @@ function goTransfer(creep: Creep): void {
 }
 
 function goWithdraw(creep: Creep): void {
+  if (globalStructure.toLinks.length > 0) {
+    if (globalStructure.toLinks[0].store[RESOURCE_ENERGY] >= 100) {
+      if (creep.withdraw(globalStructure.toLinks[0], RESOURCE_ENERGY) == ERR_NOT_IN_RANGE) {
+        creep.moveTo(globalStructure.toLinks[0]);
+      }
+      return;
+    }
+  }
   let targetSource: Source = globalStructure.sources[creep.memory.sourcesPosition];
   let targetContainer: AnyStructure = targetSource.pos.findClosestByPath(FIND_STRUCTURES, {filter:
     (structure) => (structure.structureType == STRUCTURE_CONTAINER)});

@@ -5,24 +5,34 @@ const globalStructure = {
     structures: Object.values(Game.rooms)[0].find(FIND_STRUCTURES),
     containers: Object.values(Game.rooms)[0].find(FIND_STRUCTURES, { filter: structure => structure.structureType == STRUCTURE_CONTAINER }),
     links: Object.values(Game.rooms)[0].find(FIND_STRUCTURES, { filter: structure => structure.structureType == STRUCTURE_LINK }),
-    fromLinks: [],
-    toLinks: [],
+    fromLinks: creatLinks('from'),
+    toLinks: creatLinks('to'),
     refresh: function () {
         globalStructure.structures = Game.spawns.Spawn1.room.find(FIND_STRUCTURES);
         globalStructure.containers = globalStructure.structures.filter(structure => structure.structureType == STRUCTURE_CONTAINER);
         globalStructure.links = globalStructure.structures.filter(structure => structure.structureType == STRUCTURE_LINK);
-        this.fromLinks = [];
-        this.toLinks = [];
-        for (let i = 0; i < globalStructure.links.length; ++i) {
-            if (this.links[i].pos.findInRange(this.sources, 3)[0] != undefined) {
-                this.fromLinks.push(this.links[i]);
-            }
-            else {
-                this.toLinks.push(this.links[i]);
-            }
-        }
+        this.fromLinks = creatLinks('from');
+        this.toLinks = creatLinks('to');
     }
 };
+function creatLinks(context) {
+    let from = [];
+    let to = [];
+    let links = Object.values(Game.rooms)[0].find(FIND_STRUCTURES, { filter: structure => structure.structureType == STRUCTURE_LINK });
+    let sources = Object.values(Game.rooms)[0].find(FIND_SOURCES);
+    for (let i = 0; i < links.length; ++i) {
+        if (links[i].pos.findInRange(sources, 3)[0] != undefined) {
+            from.push(links[i]);
+        }
+        else {
+            to.push(links[i]);
+        }
+    }
+    switch (context) {
+        case 'from': return from;
+        case 'to': return to;
+    }
+}
 
 // harvester
 global.harvestPath = [];
@@ -139,8 +149,7 @@ const newCreeps = {
         }
         // if upgrader less than 1, creat it
         let upgraders = _.filter(Game.creeps, (creep) => creep.memory.role == 'upgrader');
-        let storageEnergy = Game.spawns.Spawn1.room.storage.store[RESOURCE_ENERGY];
-        let upgradersNum = sites.length > 0 && storageEnergy < 100000 ? 1 : 2;
+        let upgradersNum = sites.length > 0 || globalStructure.links.length > 0 ? 1 : 2;
         if (upgraders.length < upgradersNum) {
             newUpgrader();
             return 0;
@@ -148,7 +157,7 @@ const newCreeps = {
         // if transfers less than sources's length * 2, creat it
         // if link exist, transfer's number equal sources's length
         let transfers = _.filter(Game.creeps, (creep) => creep.memory.role == 'transfer');
-        let transferNum = globalStructure.links[0] == undefined ? sourcesLength : sourcesLength * 2;
+        let transferNum = globalStructure.links[0] != undefined ? sourcesLength : sourcesLength * 2;
         if (globalStructure.containers.length > 1 && transfers.length < transferNum) {
             newTransfer(transfers, sourcesLength);
             return 0;
@@ -361,7 +370,9 @@ const roleHarvester = {
             creep.memory.harvesting = true;
         }
         else if (creep.memory.harvesting && creep.store.getFreeCapacity() == 0) {
-            creep.memory.harvesting = false;
+            if (transfer$1(creep) != true) {
+                creep.memory.harvesting = false;
+            }
         }
         // if harvester's free capacity more than 0, harvest energy
         if (creep.memory.harvesting) {
@@ -418,9 +429,6 @@ function transferEnergy(creep) {
             return;
         }
     }
-    // let container: StructureContainer = source.pos.findClosestByPath(FIND_STRUCTURES, {
-    //   filter: (structure) => structure.structureType == STRUCTURE_CONTAINER
-    // });
     let container = source.pos.findInRange(globalStructure.containers, 1)[0];
     if (container != undefined && container.store.getFreeCapacity(RESOURCE_ENERGY) > 0) {
         if (creep.transfer(container, RESOURCE_ENERGY) == ERR_NOT_IN_RANGE) {
@@ -457,6 +465,30 @@ function newOne(creep) {
     if (error == OK) {
         creep.memory.dying = true;
     }
+}
+function transfer$1(creep) {
+    let link = creep.pos.findInRange(globalStructure.fromLinks, 1)[0];
+    if (link != undefined) {
+        if (creep.transfer(link, RESOURCE_ENERGY) == OK) {
+            return true;
+        }
+        else {
+            return false;
+        }
+    }
+    else {
+        let source = globalStructure.sources[creep.memory.sourcesPosition];
+        let container = globalStructure.containers.filter(structure => structure.pos.isNearTo(source))[0];
+        if (container != undefined) {
+            if (creep.transfer(container, RESOURCE_ENERGY) == OK) {
+                return true;
+            }
+            else {
+                return false;
+            }
+        }
+    }
+    return false;
 }
 
 const roleHealer = {
@@ -523,7 +555,7 @@ function goRepair(creep) {
     if (creep.room.find(FIND_STRUCTURES, { filter: structure => structure.structureType == STRUCTURE_TOWER })[0] != undefined) {
         targetTo = injured.filter(structure => structure.structureType != STRUCTURE_WALL);
     }
-    if (targetTo[0] == undefined) {
+    if (targetTo == undefined) {
         targetTo = injured.sort((a, b) => a.hits - b.hits);
     }
     if (creep.store[RESOURCE_ENERGY] < creep.store.getCapacity(RESOURCE_ENERGY) / 2 &&
@@ -620,6 +652,14 @@ function goTransfer(creep) {
     }
 }
 function goWithdraw(creep) {
+    if (globalStructure.toLinks.length > 0) {
+        if (globalStructure.toLinks[0].store[RESOURCE_ENERGY] >= 100) {
+            if (creep.withdraw(globalStructure.toLinks[0], RESOURCE_ENERGY) == ERR_NOT_IN_RANGE) {
+                creep.moveTo(globalStructure.toLinks[0]);
+            }
+            return;
+        }
+    }
     let targetSource = globalStructure.sources[creep.memory.sourcesPosition];
     let targetContainer = targetSource.pos.findClosestByPath(FIND_STRUCTURES, { filter: (structure) => (structure.structureType == STRUCTURE_CONTAINER) });
     if (targetContainer == null ||
