@@ -100,7 +100,8 @@ function goWithdraw(creep: Creep): void {
     }
     return;
   }
-  if (globalStructure.toLinks.length > 0) {
+  if (globalStructure.toLinks.length > 0 && 
+      creep.memory.sourcesPosition.findInRange(globalStructure.fromLinks, 1).length != 0) {
     let link = Game.getObjectById(globalStructure.toLinks[0].id);
     if (link != null && link.store[RESOURCE_ENERGY] >= 100) {
       if (creep.withdraw(link, RESOURCE_ENERGY) == ERR_NOT_IN_RANGE) {

@@ -203,11 +203,15 @@ const newCreepBody = function (role) {
     else {
         switch (role) {
             case 'harvester': {
-                let bodys = [];
+                let bodys = [CARRY];
                 for (capacity /= 50; capacity >= 5; capacity -= 5) {
                     bodys.push(WORK, WORK, MOVE);
-                    if (bodys.length == 9)
+                    if (bodys.length >= 7) {
+                        if (capacity >= 2) {
+                            bodys.push(WORK);
+                        }
                         break;
+                    }
                 }
                 return bodys;
             }
@@ -257,7 +261,7 @@ const newCreepBody = function (role) {
 const roleHarvester = {
     run: function (creep) {
         let transfered = false;
-        if (creep.store.getFreeCapacity() == 0) {
+        if (creep.store.getFreeCapacity() < creep.getActiveBodyparts(WORK) * 2) {
             transfered = transferEnergy(creep);
         }
         goHarvest(creep, transfered);
@@ -409,7 +413,8 @@ function goWithdraw(creep) {
         }
         return;
     }
-    if (globalStructure.toLinks.length > 0) {
+    if (globalStructure.toLinks.length > 0 &&
+        creep.memory.sourcesPosition.findInRange(globalStructure.fromLinks, 1).length != 0) {
         let link = Game.getObjectById(globalStructure.toLinks[0].id);
         if (link != null && link.store[RESOURCE_ENERGY] >= 100) {
             if (creep.withdraw(link, RESOURCE_ENERGY) == ERR_NOT_IN_RANGE) {
@@ -539,7 +544,7 @@ function goGetEnergy$2(creep) {
 const upgradeTask = {
     run: function () {
         let upgraders = Memory.roles.upgraders;
-        if (Memory.roles.upgraders.length >= 1) {
+        if (Memory.roles.upgraders.length < 1) {
             newUpgrader();
         }
         for (let i = 0; i < upgraders.length; ++i) {
