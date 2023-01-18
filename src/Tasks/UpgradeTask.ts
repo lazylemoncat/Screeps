@@ -4,7 +4,7 @@ import { newCreepBody } from "../NewCreep/NewCreepBodys";
 export const upgradeTask = {
   run: function() {
     let upgraders = Memory.roles.upgraders;
-    if (Memory.roles.upgraders.length >= 1) {
+    if (Memory.roles.upgraders.length < 1) {
       newUpgrader();
     }
     for (let i = 0; i < upgraders.length; ++i) {
