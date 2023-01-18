@@ -3,7 +3,7 @@ import { globalStructure } from "../global/GlobalStructure";
 export const roleHarvester = {
   run: function(creep: Creep): void {
     let transfered: boolean = false;
-    if (creep.store.getFreeCapacity() == 0) {
+    if (creep.store.getFreeCapacity() < creep.getActiveBodyparts(WORK) * 2) {
       transfered = transferEnergy(creep);
     }
     goHarvest(creep, transfered);
