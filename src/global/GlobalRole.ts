@@ -1,4 +1,7 @@
-// harvester
-global.harvestPath = [];
-// repairer
-global.repairerTarget = null;
+export const globalRole = {
+  // transfer
+  transferTarget: [],
+  refresh: function() {
+    this.transferTarget = [];
+  }
+}

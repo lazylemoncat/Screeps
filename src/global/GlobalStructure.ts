@@ -1,6 +1,7 @@
 export const globalStructure: GlobalStructure = {
   sources: Object.values(Game.rooms)[0].find(FIND_SOURCES),
   structures: Object.values(Game.rooms)[0].find(FIND_STRUCTURES),
+  sites: Object.values(Game.rooms)[0].find(FIND_CONSTRUCTION_SITES),
   containers: Object.values(Game.rooms)[0].find(FIND_STRUCTURES, {filter: structure =>
     structure.structureType == STRUCTURE_CONTAINER}),
   links: Object.values(Game.rooms)[0].find(FIND_STRUCTURES, {filter: structure =>
@@ -36,4 +37,5 @@ function creatLinks(context: string): StructureLink[] {
     case 'from': return from;
     case 'to': return to;
   }
+  return [];
 }

@@ -14,7 +14,7 @@ export const structureTower = {
 };
 
 function goAttack(tower: StructureTower, enemy: Creep[]): void {
-  let target: Creep = tower.pos.findClosestByPath(enemy);
+  let target: Creep = tower.pos.findClosestByRange(enemy);
   tower.attack(target);
 }
 

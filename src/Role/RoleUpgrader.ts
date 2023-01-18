@@ -1,3 +1,5 @@
+import { globalStructure } from "@/global/GlobalStructure";
+
 export const roleUpgrader = {
   run: function(creep: Creep): void {
     if(creep.memory.upgrading && creep.store[RESOURCE_ENERGY] == 0) {
@@ -8,7 +10,6 @@ export const roleUpgrader = {
     }
 
     if(creep.memory.upgrading) {
-      isNearToTarget(creep);
       goUpgrade(creep);
     } else {
       goGetEnergy(creep);
@@ -28,19 +29,11 @@ function goGetEnergy(creep: Creep): void {
     structure.structureType == STRUCTURE_STORAGE) &&
     structure.store[RESOURCE_ENERGY] > 0});
   if (targetContainer == undefined) {
-    let target: Source = creep.pos.findClosestByPath(FIND_SOURCES,{filter :
-      (sources) => sources.energy > 0});
+    let target: Source = globalStructure.sources.filter(source => source.energy > 0)[0];
     if (creep.harvest(target) == ERR_NOT_IN_RANGE) {
       creep.moveTo(target);
     }
   } else if (creep.withdraw(targetContainer, RESOURCE_ENERGY) == ERR_NOT_IN_RANGE) {
     creep.moveTo(targetContainer);
-  }
-}
-
-function isNearToTarget(creep: Creep): void {
-  let closestSource: Source = creep.pos.findClosestByPath(FIND_SOURCES);
-  if (creep.pos.isNearTo(closestSource)) {
-    creep.moveTo(creep.room.controller);
   }
 }
