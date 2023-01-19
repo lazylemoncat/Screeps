@@ -11,7 +11,7 @@ export const roleTransfer = {
     return creep.memory.transfering;
   },
 
-  goTransfer: function (creep: Creep, task: Id<Structure>) {
+  goTransfer: function (creep: Creep, task: Id<AnyStoreStructure>) {
     creep.memory.carrierTarget = task;
     let target: AnyStoreStructure = Game.getObjectById(task) as AnyStoreStructure;
     if (target == null || target.store.getFreeCapacity(RESOURCE_ENERGY) == 0) {
@@ -35,10 +35,10 @@ export const roleTransfer = {
     return;
   },
 
-  goWithdraw: function(creep: Creep, task: Id<Creep | Structure>) {
-    let target: Creep | Structure = Game.getObjectById(task);
+  goWithdraw: function(creep: Creep, task: Id<Creep | AnyStoreStructure>) {
+    let target: Creep | AnyStoreStructure = Game.getObjectById(task);
     creep.memory.carrierTarget = task;
-    if (target == null) {
+    if (target == null || target.store[RESOURCE_ENERGY] == 0) {
       for (let key in tasks.withdraw) {
         if (tasks.withdraw[key].includes(target)) {
           tasks.withdraw[key].splice(tasks.withdraw[key].indexOf(task), 1);

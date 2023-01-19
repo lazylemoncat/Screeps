@@ -1,10 +1,11 @@
-import { roleUpgrader } from "@/Role/RoleUpgrader";
+import { roleUpgrader } from "../Role/RoleUpgrader";
 import { newCreepBody } from "../NewCreep/NewCreepBodys";
 
 export const upgradeTask = {
   run: function(room: RoomMemory) {
     let upgraders = Memory.roles.upgraders;
-    if (Memory.roles.upgraders.length < 1) {
+    let upgradersNum = room.sites.length > 0 ? 1 : 3;
+    if (Memory.roles.upgraders.length < upgradersNum) {
       newUpgrader();
     }
     for (let i = 0; i < upgraders.length; ++i) {

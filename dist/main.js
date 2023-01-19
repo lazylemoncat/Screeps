@@ -143,7 +143,8 @@ function goAttack(tower, enemy) {
 function runRepair(tower) {
     let targetTo = tower.room.find(FIND_STRUCTURES, {
         filter: object => object.hits < object.hitsMax &&
-            object.structureType != STRUCTURE_WALL
+            object.structureType != STRUCTURE_WALL &&
+            object.structureType != STRUCTURE_RAMPART
     });
     tower.repair(targetTo[0]);
 }
@@ -535,7 +536,8 @@ function newTransfer(room) {
     let harvesters = Memory.roles.harvesters;
     let transfers = Memory.roles.transfers;
     let sources = room.sources;
-    if (transfers.length >= harvesters.length || transfers.length >= sources.length) {
+    let transferNum = room.links.length > 0 ? sources.length * 2 : sources.length;
+    if (transfers.length >= harvesters.length && transfers.length >= transferNum) {
         return;
     }
     Game.spawns['Spawn1'].memory.shouldSpawn = 'transfer';
@@ -584,7 +586,8 @@ function goGetEnergy$2(creep, room) {
 const upgradeTask = {
     run: function (room) {
         let upgraders = Memory.roles.upgraders;
-        if (Memory.roles.upgraders.length < 1) {
+        let upgradersNum = room.sites.length > 0 ? 1 : 3;
+        if (Memory.roles.upgraders.length < upgradersNum) {
             newUpgrader();
         }
         for (let i = 0; i < upgraders.length; ++i) {
@@ -667,29 +670,6 @@ function goGetEnergy$1(creep, room) {
     return;
 }
 
-const buildTask = {
-    run: function (room) {
-        let builders = Memory.roles.builders;
-        let sites = room.sites;
-        if (sites.length > 0 && builders.length < 1) {
-            newBuilder();
-        }
-        for (let i = 0; i < builders.length; ++i) {
-            roleBuilder.run(Game.getObjectById(builders[i]), room);
-        }
-    }
-};
-function newBuilder() {
-    if (Game.spawns['Spawn1'].memory.shouldSpawn != null) {
-        return;
-    }
-    Game.spawns['Spawn1'].memory.shouldSpawn = 'builder';
-    let newName = 'Builder' + Game.time;
-    Game.spawns['Spawn1'].spawnCreep(newCreepBody('builder'), newName, {
-        memory: { role: 'builder' }
-    });
-}
-
 const roleRepairer = {
     run: function (creep, room) {
         if (creep.memory.repairing && creep.store[RESOURCE_ENERGY] == 0) {
@@ -764,6 +744,34 @@ function goGetEnergy(creep, room) {
             creep.moveTo(targetEnergy);
         }
     }
+}
+
+const buildTask = {
+    run: function (room) {
+        let builders = Memory.roles.builders;
+        let sites = room.sites;
+        if (sites.length > 0 && builders.length < 3) {
+            newBuilder();
+        }
+        for (let i = 0; i < builders.length; ++i) {
+            if (sites.length == 0) {
+                roleRepairer.run(Game.getObjectById(builders[i]), room);
+            }
+            else {
+                roleBuilder.run(Game.getObjectById(builders[i]), room);
+            }
+        }
+    }
+};
+function newBuilder() {
+    if (Game.spawns['Spawn1'].memory.shouldSpawn != null) {
+        return;
+    }
+    Game.spawns['Spawn1'].memory.shouldSpawn = 'builder';
+    let newName = 'Builder' + Game.time;
+    Game.spawns['Spawn1'].spawnCreep(newCreepBody('builder'), newName, {
+        memory: { role: 'builder' }
+    });
 }
 
 const repairTask = {

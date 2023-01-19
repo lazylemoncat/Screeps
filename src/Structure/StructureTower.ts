@@ -1,3 +1,5 @@
+import { object } from "lodash";
+
 export const structureTower = {
   run: function (tower: StructureTower): void {
     let enemy: Creep[] = tower.room.find(FIND_HOSTILE_CREEPS);
@@ -21,6 +23,7 @@ function goAttack(tower: StructureTower, enemy: Creep[]): void {
 function runRepair (tower: StructureTower): void {
   let targetTo: AnyStructure[] = tower.room.find(FIND_STRUCTURES, {
     filter: object => object.hits < object.hitsMax &&
-    object.structureType != STRUCTURE_WALL});
+    object.structureType != STRUCTURE_WALL &&
+    object.structureType != STRUCTURE_RAMPART});
   tower.repair(targetTo[0]);
 }

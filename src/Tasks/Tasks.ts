@@ -15,7 +15,7 @@ export const tasks = {
 
   returnTransfer: function(room: RoomMemory) {
     findTransferTask(room);
-    let task: Id<Structure>[] = [];
+    let task: Id<AnyStoreStructure>[] = [];
     for (let key in tasks.transfer) {
       task = task.concat(tasks.transfer[key]);
     }
@@ -24,7 +24,7 @@ export const tasks = {
 
   returnWithdraw: function(room: RoomMemory) {
     findWithdraw(room);
-    let task: Id<Structure>[] = [];
+    let task: Id<AnyStoreStructure>[] = [];
     for (let key in tasks.withdraw) {
       task = task.concat(tasks.withdraw[key]);
     }

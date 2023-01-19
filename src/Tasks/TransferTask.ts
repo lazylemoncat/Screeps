@@ -6,15 +6,15 @@ export const transferTask = {
   run: function(room: RoomMemory) {
     newTransfer(room);
 
-    let withdrawTask: Id<Creep | Structure>[] = tasks.returnWithdraw(room);
-    let transferTask: Id<Structure>[] = tasks.returnTransfer(room);
+    let withdrawTask: Id<Creep | AnyStoreStructure>[] = tasks.returnWithdraw(room);
+    let transferTask: Id<AnyStoreStructure>[] = tasks.returnTransfer(room);
     let transferIndex = 0;
     let withdrawIndex = 0;
     for (let i = 0; i < Memory.roles.transfers.length; ++i) {
       let transfer: Creep = Game.getObjectById(Memory.roles.transfers[i]);
       if (transfer.memory.carrierTarget != null) {
         if (roleTransfer.isTransfering(transfer)) {
-          roleTransfer.goTransfer(transfer, transfer.memory.carrierTarget as Id<Structure>);
+          roleTransfer.goTransfer(transfer, transfer.memory.carrierTarget as Id<AnyStoreStructure>);
         } else {
           roleTransfer.goWithdraw(transfer, transfer.memory.carrierTarget)
         }
@@ -36,7 +36,8 @@ function newTransfer(room: RoomMemory): void{
   let harvesters = Memory.roles.harvesters;
   let transfers = Memory.roles.transfers;
   let sources = room.sources;
-  if (transfers.length >= harvesters.length || transfers.length >= sources.length) {
+  let transferNum = room.links.length > 0 ? sources.length * 2 : sources.length;
+  if (transfers.length >= harvesters.length && transfers.length >= transferNum) {
       return;
   }
   Game.spawns['Spawn1'].memory.shouldSpawn = 'transfer';

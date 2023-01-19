@@ -16,7 +16,7 @@ interface CreepMemory {
   upgrading?: boolean,
   building?: boolean,
   transfering?: boolean,
-  carrierTarget?: Id<Creep | Structure>,
+  carrierTarget?: Id<Creep | AnyStoreStructure>,
   repairing?: boolean,
 }
 interface SpawnMemory {
