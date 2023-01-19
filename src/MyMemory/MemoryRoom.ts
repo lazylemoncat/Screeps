@@ -1,5 +1,6 @@
 export const memoryRoom = {
   refresh: function() {
+    Memory.rooms = {};
     for(let name in Game.rooms) {
       let structures = Game.rooms[name].find(FIND_STRUCTURES);
       Memory.rooms[name] = {
@@ -16,7 +17,7 @@ export const memoryRoom = {
         containers: structures.filter(structure => structure.structureType == STRUCTURE_CONTAINER).
           map(structure => structure.id) as Id<StructureContainer>[],
         // Id<StructureStorage>
-        storage: Game.rooms[name].storage.id,
+        storage: Game.rooms[name].storage ? Game.rooms[name].storage.id : null,
         // StructureLink[]
         links: structures.filter(structure => structure.structureType == STRUCTURE_LINK).
           map(structure => structure.id) as Id<StructureLink>[],
