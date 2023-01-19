@@ -1,7 +1,5 @@
-import { globalStructure } from "@/global/GlobalStructure";
-
 export const roleBuilder = {
-  run: function (creep: Creep): void {
+  run: function (creep: Creep, room: RoomMemory): void {
     if (backRoom(creep) == 0) {
       return;
     }
@@ -12,9 +10,9 @@ export const roleBuilder = {
     }
 
     if(creep.memory.building) {
-      goBuild(creep);
+      goBuild(creep, room);
     } else {
-      goGetEnergy(creep);
+      goGetEnergy(creep, room);
     }
 	}
 };
@@ -28,7 +26,7 @@ function backRoom(creep: Creep): number {
   }
 }
 
-function goBuild(creep: Creep): void {
+function goBuild(creep: Creep, room: RoomMemory): void {
   let target: ConstructionSite[] = creep.room.find(FIND_CONSTRUCTION_SITES);
     if(target[0]) {
       if (creep.store[RESOURCE_ENERGY] < creep.store.getCapacity(RESOURCE_ENERGY) / 2 &&
@@ -42,7 +40,7 @@ function goBuild(creep: Creep): void {
     }
 }
 
-function goGetEnergy(creep: Creep): void {
+function goGetEnergy(creep: Creep, room: RoomMemory): void {
   let targetStore: AnyStoreStructure = creep.pos.findClosestByPath(FIND_STRUCTURES, 
     {filter: (structure) => {return (structure.structureType == STRUCTURE_CONTAINER ||
     structure.structureType == STRUCTURE_STORAGE) &&
@@ -54,7 +52,7 @@ function goGetEnergy(creep: Creep): void {
     }
     return;
   }
-  let sources: Source[] = globalStructure.sources.filter(source => source.energy > 0);
+  let sources: Source = Game.getObjectById(room.sources[0]);
   if (creep.harvest(sources[0]) == ERR_NOT_IN_RANGE) {
     if (creep.moveTo(sources[0]) == ERR_NO_PATH) {
       if (creep.harvest(sources[1]) == ERR_NOT_IN_RANGE) {

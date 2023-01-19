@@ -1,97 +1,5 @@
 'use strict';
 
-const globalStructure = {
-    sources: Object.values(Game.rooms)[0].find(FIND_SOURCES),
-    structures: Object.values(Game.rooms)[0].find(FIND_STRUCTURES),
-    sites: Object.values(Game.rooms)[0].find(FIND_CONSTRUCTION_SITES),
-    containers: Object.values(Game.rooms)[0].find(FIND_STRUCTURES, { filter: structure => structure.structureType == STRUCTURE_CONTAINER }),
-    links: Object.values(Game.rooms)[0].find(FIND_STRUCTURES, { filter: structure => structure.structureType == STRUCTURE_LINK }),
-    fromLinks: creatLinks('from'),
-    toLinks: creatLinks('to'),
-    refresh: function () {
-        globalStructure.structures = Game.spawns.Spawn1.room.find(FIND_STRUCTURES);
-        globalStructure.containers = globalStructure.structures.filter(structure => structure.structureType == STRUCTURE_CONTAINER);
-        globalStructure.links = globalStructure.structures.filter(structure => structure.structureType == STRUCTURE_LINK);
-        this.fromLinks = creatLinks('from');
-        this.toLinks = creatLinks('to');
-    }
-};
-function creatLinks(context) {
-    let from = [];
-    let to = [];
-    let links = Object.values(Game.rooms)[0].find(FIND_STRUCTURES, { filter: structure => structure.structureType == STRUCTURE_LINK });
-    let sources = Object.values(Game.rooms)[0].find(FIND_SOURCES);
-    for (let i = 0; i < links.length; ++i) {
-        if (links[i].pos.findInRange(sources, 3)[0] != undefined) {
-            from.push(links[i]);
-        }
-        else {
-            to.push(links[i]);
-        }
-    }
-    switch (context) {
-        case 'from': return from;
-        case 'to': return to;
-    }
-    return [];
-}
-
-const globalAutoSites = {
-    run: function () {
-        creatContainerSites();
-    }
-};
-function creatContainerSites() {
-    for (let i = 0; i < globalStructure.sources.length; ++i) {
-        let containers = globalStructure.sources[i].pos.findInRange(globalStructure.containers, 1);
-        if (containers[0] != undefined) {
-            continue;
-        }
-        else {
-            let sites = globalStructure.sources[i].pos.findInRange(FIND_CONSTRUCTION_SITES, 1);
-            if (sites[0] != undefined) {
-                continue;
-            }
-        }
-        let path = Game.spawns.Spawn1.pos.findPathTo(globalStructure.sources[i], { ignoreCreeps: true });
-        let posX = path[path.length - 2].x;
-        let posY = path[path.length - 2].y;
-        let pos = new RoomPosition(posX, posY, Game.spawns.Spawn1.room.name);
-        pos.createConstructionSite(STRUCTURE_CONTAINER);
-    }
-    let contronller = Object.values(Game.rooms)[0].controller;
-    let containers = contronller.pos.findInRange(globalStructure.containers, 2);
-    let sites = contronller.pos.findInRange(FIND_MY_CONSTRUCTION_SITES, 2);
-    if (containers[0] == undefined && sites[0] == undefined) {
-        let path = Game.spawns.Spawn1.pos.findPathTo(contronller, { ignoreCreeps: true });
-        let posX = path[path.length - 3].x;
-        let posY = path[path.length - 3].y;
-        let pos = new RoomPosition(posX, posY, Game.spawns.Spawn1.room.name);
-        pos.createConstructionSite(STRUCTURE_CONTAINER);
-    }
-}
-
-const globalRole = {
-    // transfer
-    transferTarget: [],
-    refresh: function () {
-        this.transferTarget = [];
-    }
-};
-
-/**
- * @file to refresh global veriables
- * @author LazyKitty
- */
-const refreshGlobal = function () {
-    // GlobalStructure.ts
-    if (Game.spawns.Spawn1 != undefined) {
-        globalStructure.refresh();
-        globalAutoSites.run();
-        globalRole.refresh();
-    }
-};
-
 const memoryDelete = {
     deleteDead: function () {
         // delete dead creeps
@@ -107,6 +15,7 @@ const memoryRoles = {
     refresh: function () {
         let roles = returnIds();
         Memory.roles = {
+            // Id<Creep>[]
             harvesters: roles.harvester,
             transfers: roles.transfer,
             upgraders: roles.upgrader,
@@ -134,12 +43,52 @@ function returnIds() {
 
 const memoryRoom = {
     refresh: function () {
-        Memory.room = [];
         for (let name in Game.rooms) {
-            Memory.room.push(name);
+            let structures = Game.rooms[name].find(FIND_STRUCTURES);
+            Memory.rooms[name] = {
+                // Id<Source>[]
+                sources: Game.rooms[name].find(FIND_SOURCES).map(source => source.id),
+                // Id<AnyStructure>[]
+                structures: structures.map(structure => structure.id),
+                // Id<StructureSpawn>[]
+                spawns: structures.filter(structure => structure.structureType == STRUCTURE_SPAWN).
+                    map(structure => structure.id),
+                // Id<ConstructionSite>[]
+                sites: Game.rooms[name].find(FIND_CONSTRUCTION_SITES).map(site => site.id),
+                // Id<StructureContainer>[]
+                containers: structures.filter(structure => structure.structureType == STRUCTURE_CONTAINER).
+                    map(structure => structure.id),
+                // Id<StructureStorage>
+                storage: Game.rooms[name].storage.id,
+                // StructureLink[]
+                links: structures.filter(structure => structure.structureType == STRUCTURE_LINK).
+                    map(structure => structure.id),
+                // harvested energy fromLink~toLink
+                fromLinks: creatLinks('from'),
+                toLinks: creatLinks('to'),
+            };
         }
     }
 };
+function creatLinks(context) {
+    let from = [];
+    let to = [];
+    let links = Object.values(Game.rooms)[0].find(FIND_STRUCTURES, { filter: structure => structure.structureType == STRUCTURE_LINK });
+    let sources = Object.values(Game.rooms)[0].find(FIND_SOURCES);
+    for (let i = 0; i < links.length; ++i) {
+        if (links[i].pos.findInRange(sources, 3)[0] != undefined) {
+            from.push(links[i].id);
+        }
+        else {
+            to.push(links[i].id);
+        }
+    }
+    switch (context) {
+        case 'from': return from;
+        case 'to': return to;
+    }
+    return [];
+}
 
 const memoryRefresh = {
     refresh: function () {
@@ -150,21 +99,21 @@ const memoryRefresh = {
 };
 
 const structureLink = {
-    run: function (link) {
-        for (let i = 0; i < globalStructure.fromLinks.length; ++i) {
-            if (globalStructure.fromLinks[i].id == link.id) {
-                transfer$1(link);
+    run: function (link, room) {
+        for (let i = 0; i < room.fromLinks.length; ++i) {
+            if (room.fromLinks[i] == link.id) {
+                transfer$1(link, room);
                 break;
             }
         }
     },
 };
-function transfer$1(link) {
+function transfer$1(link, room) {
     if (link.store[RESOURCE_ENERGY] >= 100) {
-        for (let i = 0; i < globalStructure.toLinks.length; ++i) {
-            let energy = Game.getObjectById(globalStructure.toLinks[i].id).store.getFreeCapacity(RESOURCE_ENERGY);
+        for (let i = 0; i < room.toLinks.length; ++i) {
+            let energy = Game.getObjectById(room.toLinks[i]).store.getFreeCapacity(RESOURCE_ENERGY);
             if (energy > 10) {
-                link.transferEnergy(Game.getObjectById(globalStructure.toLinks[i].id));
+                link.transferEnergy(Game.getObjectById(room.toLinks[i]));
                 return;
             }
         }
@@ -282,16 +231,16 @@ const tasks = {
         container: [],
         storage: [],
     },
-    returnTransfer: function () {
-        findTransferTask$1();
+    returnTransfer: function (room) {
+        findTransferTask(room);
         let task = [];
         for (let key in tasks.transfer) {
             task = task.concat(tasks.transfer[key]);
         }
         return task;
     },
-    returnWithdraw: function () {
-        findWithdraw();
+    returnWithdraw: function (room) {
+        findWithdraw(room);
         let task = [];
         for (let key in tasks.withdraw) {
             task = task.concat(tasks.withdraw[key]);
@@ -299,34 +248,34 @@ const tasks = {
         return task;
     },
 };
-function findWithdraw() {
-    linkTask('withdraw');
-    containerTask('withdraw');
-    storageTask('withdraw');
+function findWithdraw(room) {
+    linkTask('withdraw', room);
+    containerTask('withdraw', room);
+    storageTask('withdraw', room);
 }
-function findTransferTask$1() {
-    transferTask$1('spawn');
-    transferTask$1('extension');
-    transferTask$1('tower');
-    transferTask$1('container');
-    transferTask$1('storage');
+function findTransferTask(room) {
+    transferTask$1('spawn', room);
+    transferTask$1('extension', room);
+    transferTask$1('tower', room);
+    transferTask$1('container', room);
+    transferTask$1('storage', room);
 }
-function transferTask$1(type) {
-    let targets = globalStructure.structures.filter(structure => structure.structureType == type &&
-        Game.getObjectById(structure.id).store.getFreeCapacity(RESOURCE_ENERGY) > 0);
+function transferTask$1(type, room) {
+    let targets = room.structures.filter(structure => Game.getObjectById(structure).structureType == type &&
+        Game.getObjectById(structure).store.getFreeCapacity(RESOURCE_ENERGY) > 0);
     for (let i = 0; i < targets.length; ++i) {
-        if (!tasks.transfer[type].includes(targets[i].id) &&
-            targets[i].pos.findInRange(globalStructure.sources, 2).length == 0) {
-            tasks.transfer[type].push(targets[i].id);
+        if (!tasks.transfer[type].includes(targets[i]) &&
+            Game.getObjectById(targets[i]).pos.findInRange(FIND_SOURCES, 2).length == 0) {
+            tasks.transfer[type].push(targets[i]);
         }
     }
 }
-function linkTask(task) {
+function linkTask(task, room) {
     switch (task) {
         case 'withdraw': {
-            let links = globalStructure.toLinks;
-            for (let i = 0; i < globalStructure.toLinks.length; ++i) {
-                let link = Game.getObjectById(links[i].id);
+            let links = room.toLinks;
+            for (let i = 0; i < room.toLinks.length; ++i) {
+                let link = Game.getObjectById(links[i]);
                 if (link.store[RESOURCE_ENERGY] > 100 && !tasks.withdraw.link.includes(link.id)) {
                     tasks.withdraw.link.push(link.id);
                 }
@@ -335,13 +284,13 @@ function linkTask(task) {
         }
     }
 }
-function containerTask(task) {
+function containerTask(task, room) {
     switch (task) {
         case 'withdraw': {
-            let containers = globalStructure.containers;
+            let containers = room.containers;
             for (let i = 0; i < containers.length; ++i) {
-                if (containers[i].pos.findInRange(globalStructure.sources, 1).length != 0) {
-                    let container = Game.getObjectById(containers[i].id);
+                if (Game.getObjectById(containers[i]).pos.findInRange(FIND_SOURCES, 1).length != 0) {
+                    let container = Game.getObjectById(containers[i]);
                     if (container.store[RESOURCE_ENERGY] >= 50 && !tasks.withdraw.container.includes(container.id)) {
                         tasks.withdraw.container.push(container.id);
                     }
@@ -351,10 +300,10 @@ function containerTask(task) {
         }
     }
 }
-function storageTask(task) {
+function storageTask(task, room) {
     switch (task) {
         case 'withdraw': {
-            let storage = Object.values(Game.rooms)[0].storage;
+            let storage = Game.getObjectById(room.storage);
             if (storage != undefined && !tasks.withdraw.storage.includes(storage.id) &&
                 storage.store[RESOURCE_ENERGY] >= 0) {
                 tasks.withdraw.storage.push(storage.id);
@@ -365,16 +314,16 @@ function storageTask(task) {
 }
 
 const roleHarvester = {
-    run: function (creep) {
+    run: function (creep, room) {
         let transfered = false;
         if (creep.store.getFreeCapacity() < creep.getActiveBodyparts(WORK) * 2) {
-            transfered = transferEnergy(creep);
+            transfered = transferEnergy(creep, room);
         }
-        goHarvest(creep, transfered);
+        goHarvest(creep, transfered, room);
     }
 };
-function goHarvest(creep, transfered) {
-    let source = globalStructure.sources[creep.memory.sourcesPosition];
+function goHarvest(creep, transfered, room) {
+    let source = Game.getObjectById(room.sources[creep.memory.sourcesPosition]);
     if (!creep.pos.isNearTo(source)) {
         creep.moveTo(source);
         return;
@@ -383,7 +332,8 @@ function goHarvest(creep, transfered) {
         creep.store.getFreeCapacity(RESOURCE_ENERGY) == 0 && !transfered) {
         return;
     }
-    let container = source.pos.findInRange(globalStructure.containers, 1);
+    let container = source.pos.findInRange(FIND_STRUCTURES, 1).
+        filter(structure => structure.structureType == STRUCTURE_CONTAINER);
     if (container[0] != undefined) {
         if (!creep.pos.isEqualTo(container[0])) {
             creep.moveTo(container[0]);
@@ -391,15 +341,15 @@ function goHarvest(creep, transfered) {
     }
     creep.harvest(source);
 }
-function transferEnergy(creep) {
+function transferEnergy(creep, room) {
     if (Game.getObjectById(creep.memory.waiting) != null) {
         return;
     }
-    let links = globalStructure.links;
-    let containers = globalStructure.containers;
-    let sources = globalStructure.sources;
+    let links = room.links;
+    let containers = room.containers;
+    let sources = room.sources;
     if (links.length == 0 && containers.length < sources.length &&
-        creep.pos.findInRange(containers, 1).length == 0) {
+        creep.pos.findInRange(FIND_STRUCTURES, 1).filter(structure => structure.structureType == STRUCTURE_CONTAINER).length == 0) {
         if (!tasks.withdraw.creep.includes(creep.id)) {
             tasks.withdraw.creep.push(creep.id);
         }
@@ -411,7 +361,7 @@ function transferEnergy(creep) {
     return true;
 }
 function transfer(creep) {
-    let link = creep.pos.findInRange(globalStructure.fromLinks, 1)[0];
+    let link = creep.pos.findInRange(FIND_STRUCTURES, 1).filter(structure => structure.structureType == STRUCTURE_LINK)[0];
     if (link != undefined) {
         let targetLink = Game.getObjectById(link.id);
         if (creep.transfer(targetLink, RESOURCE_ENERGY) == OK) {
@@ -419,8 +369,7 @@ function transfer(creep) {
         }
         return false;
     }
-    let source = globalStructure.sources[creep.memory.sourcesPosition];
-    let container = globalStructure.containers.filter(structure => structure.pos.isNearTo(source))[0];
+    let container = creep.pos.findInRange(FIND_STRUCTURES, 1).filter(structure => structure.structureType == STRUCTURE_CONTAINER)[0];
     if (container != undefined) {
         if (creep.transfer(container, RESOURCE_ENERGY) == OK) {
             return true;
@@ -433,26 +382,25 @@ function transfer(creep) {
 }
 
 const harvestTask = {
-    run: function () {
-        newCreep();
+    run: function (room) {
+        newCreep(room);
         for (let i = 0; i < Memory.roles.harvesters.length; ++i) {
-            roleHarvester.run(Game.getObjectById(Memory.roles.harvesters[i]));
+            roleHarvester.run(Game.getObjectById(Memory.roles.harvesters[i]), room);
         }
     }
 };
-function newCreep() {
+function newCreep(room) {
     let harvesters = Memory.roles.harvesters;
     let transfers = Memory.roles.transfers;
-    let sources = globalStructure.sources;
+    let sources = room.sources;
     Game.spawns['Spawn1'].memory.shouldSpawn = null;
     if (harvesters.length <= transfers.length && harvesters.length < sources.length) {
         Game.spawns['Spawn1'].memory.shouldSpawn = 'harvester';
-        newHarvester(harvesters);
+        newHarvester(harvesters, sources.length);
     }
 }
-function newHarvester(harvesters) {
+function newHarvester(harvesters, sourcesLength) {
     let newName = "Harvester" + Game.time;
-    let sourcesLength = globalStructure.sources.length;
     let posFlag = 0;
     for (let i = 0; i < sourcesLength; ++i) {
         for (let j = 0; j < harvesters.length; ++j) {
@@ -482,14 +430,14 @@ const roleTransfer = {
     goTransfer: function (creep, task) {
         creep.memory.carrierTarget = task;
         let target = Game.getObjectById(task);
-        if (target == null) {
+        if (target == null || target.store.getFreeCapacity(RESOURCE_ENERGY) == 0) {
             for (let key in tasks.transfer) {
                 if (tasks.transfer[key].includes(task)) {
                     tasks.transfer[key].splice(tasks.transfer[key].indexOf(task), 1);
-                    creep.memory.carrierTarget = null;
                     break;
                 }
             }
+            creep.memory.carrierTarget = null;
             return;
         }
         let type = target.structureType;
@@ -500,7 +448,7 @@ const roleTransfer = {
                 creep.memory.carrierTarget = null;
                 break;
             case ERR_NOT_IN_RANGE:
-                creep.moveTo(target, { reusePath: 10 });
+                creep.moveTo(target, { reusePath: 1 });
                 break;
         }
         tasks.transfer[type].splice(tasks.transfer[type].indexOf(task), 1);
@@ -529,7 +477,7 @@ const roleTransfer = {
                     target.memory.waiting = null;
                     break;
                 case ERR_NOT_IN_RANGE:
-                    creep.moveTo(target, { reusePath: 10 });
+                    creep.moveTo(target, { reusePath: 1 });
                     break;
             }
             tasks.withdraw.creep.splice(tasks.withdraw.creep.indexOf(task), 1);
@@ -542,7 +490,7 @@ const roleTransfer = {
                     creep.memory.carrierTarget = null;
                     break;
                 case ERR_NOT_IN_RANGE:
-                    creep.moveTo(target, { reusePath: 10 });
+                    creep.moveTo(target, { reusePath: 1 });
                     break;
             }
             tasks.withdraw[type].splice(tasks.withdraw[type].indexOf(task), 1);
@@ -552,10 +500,10 @@ const roleTransfer = {
 };
 
 const transferTask = {
-    run: function () {
-        newTransfer();
-        let withdrawTask = tasks.returnWithdraw();
-        let transferTask = findTransferTask();
+    run: function (room) {
+        newTransfer(room);
+        let withdrawTask = tasks.returnWithdraw(room);
+        let transferTask = tasks.returnTransfer(room);
         let transferIndex = 0;
         let withdrawIndex = 0;
         for (let i = 0; i < Memory.roles.transfers.length; ++i) {
@@ -578,13 +526,13 @@ const transferTask = {
         }
     }
 };
-function newTransfer() {
+function newTransfer(room) {
     if (Game.spawns['Spawn1'].memory.shouldSpawn != null) {
         return;
     }
     let harvesters = Memory.roles.harvesters;
     let transfers = Memory.roles.transfers;
-    let sources = globalStructure.sources;
+    let sources = room.sources;
     if (transfers.length >= harvesters.length || transfers.length >= sources.length) {
         return;
     }
@@ -594,12 +542,9 @@ function newTransfer() {
             role: 'transfer',
         } });
 }
-function findTransferTask() {
-    return tasks.returnTransfer();
-}
 
 const roleUpgrader = {
-    run: function (creep) {
+    run: function (creep, room) {
         if (creep.memory.upgrading && creep.store[RESOURCE_ENERGY] == 0) {
             creep.memory.upgrading = false;
         }
@@ -610,7 +555,7 @@ const roleUpgrader = {
             goUpgrade(creep);
         }
         else {
-            goGetEnergy$2(creep);
+            goGetEnergy$2(creep, room);
         }
     }
 };
@@ -619,12 +564,12 @@ function goUpgrade(creep) {
         creep.moveTo(creep.room.controller);
     }
 }
-function goGetEnergy$2(creep) {
+function goGetEnergy$2(creep, room) {
     let targetContainer = creep.pos.findClosestByPath(FIND_STRUCTURES, { filter: (structure) => (structure.structureType == STRUCTURE_CONTAINER ||
             structure.structureType == STRUCTURE_STORAGE) &&
             structure.store[RESOURCE_ENERGY] > 0 });
     if (targetContainer == undefined) {
-        let target = globalStructure.sources.filter(source => source.energy > 0)[0];
+        let target = Game.getObjectById(room.sources[0]);
         if (creep.harvest(target) == ERR_NOT_IN_RANGE) {
             creep.moveTo(target);
         }
@@ -635,13 +580,13 @@ function goGetEnergy$2(creep) {
 }
 
 const upgradeTask = {
-    run: function () {
+    run: function (room) {
         let upgraders = Memory.roles.upgraders;
         if (Memory.roles.upgraders.length < 1) {
             newUpgrader();
         }
         for (let i = 0; i < upgraders.length; ++i) {
-            roleUpgrader.run(Game.getObjectById(upgraders[i]));
+            roleUpgrader.run(Game.getObjectById(upgraders[i]), room);
         }
     }
 };
@@ -657,7 +602,7 @@ function newUpgrader() {
 }
 
 const roleBuilder = {
-    run: function (creep) {
+    run: function (creep, room) {
         if (backRoom$1(creep) == 0) {
             return;
         }
@@ -671,7 +616,7 @@ const roleBuilder = {
             goBuild(creep);
         }
         else {
-            goGetEnergy$1(creep);
+            goGetEnergy$1(creep, room);
         }
     }
 };
@@ -684,7 +629,7 @@ function backRoom$1(creep) {
         return -1;
     }
 }
-function goBuild(creep) {
+function goBuild(creep, room) {
     let target = creep.room.find(FIND_CONSTRUCTION_SITES);
     if (target[0]) {
         if (creep.store[RESOURCE_ENERGY] < creep.store.getCapacity(RESOURCE_ENERGY) / 2 &&
@@ -697,7 +642,7 @@ function goBuild(creep) {
         }
     }
 }
-function goGetEnergy$1(creep) {
+function goGetEnergy$1(creep, room) {
     let targetStore = creep.pos.findClosestByPath(FIND_STRUCTURES, { filter: (structure) => {
             return (structure.structureType == STRUCTURE_CONTAINER ||
                 structure.structureType == STRUCTURE_STORAGE) &&
@@ -709,7 +654,7 @@ function goGetEnergy$1(creep) {
         }
         return;
     }
-    let sources = globalStructure.sources.filter(source => source.energy > 0);
+    let sources = Game.getObjectById(room.sources[0]);
     if (creep.harvest(sources[0]) == ERR_NOT_IN_RANGE) {
         if (creep.moveTo(sources[0]) == ERR_NO_PATH) {
             if (creep.harvest(sources[1]) == ERR_NOT_IN_RANGE) {
@@ -721,14 +666,14 @@ function goGetEnergy$1(creep) {
 }
 
 const buildTask = {
-    run: function () {
+    run: function (room) {
         let builders = Memory.roles.builders;
-        let sites = globalStructure.sites;
+        let sites = room.sites;
         if (sites.length > 0 && builders.length < 1) {
             newBuilder();
         }
         for (let i = 0; i < builders.length; ++i) {
-            roleBuilder.run(Game.getObjectById(builders[i]));
+            roleBuilder.run(Game.getObjectById(builders[i]), room);
         }
     }
 };
@@ -744,7 +689,7 @@ function newBuilder() {
 }
 
 const roleRepairer = {
-    run: function (creep) {
+    run: function (creep, room) {
         if (creep.memory.repairing && creep.store[RESOURCE_ENERGY] == 0) {
             creep.memory.repairing = false;
             global.repairerTarget = null;
@@ -757,7 +702,7 @@ const roleRepairer = {
             backRoom(creep);
         }
         else {
-            goGetEnergy(creep);
+            goGetEnergy(creep, room);
         }
     }
 };
@@ -800,14 +745,14 @@ function goRepair(creep) {
         creep.moveTo(targetTo[0]);
     }
 }
-function goGetEnergy(creep) {
+function goGetEnergy(creep, room) {
     let targetEnergy = creep.pos.findClosestByPath(FIND_STRUCTURES, { filter: (structure) => {
             return (structure.structureType == STRUCTURE_CONTAINER ||
                 structure.structureType == STRUCTURE_STORAGE)
                 && structure.store[RESOURCE_ENERGY] > 0;
         } });
     if (targetEnergy == null) {
-        let targetsource = globalStructure.sources[0];
+        let targetsource = Game.getObjectById(room.sources[0]);
         if (creep.harvest(targetsource) == ERR_NOT_IN_RANGE) {
             creep.moveTo(targetsource);
         }
@@ -820,14 +765,14 @@ function goGetEnergy(creep) {
 }
 
 const repairTask = {
-    run: function () {
+    run: function (room) {
         let repairers = Memory.roles.repaiers;
-        let containers = globalStructure.containers;
+        let containers = room.containers;
         if (repairers.length < 1 && containers.length > 0) {
             newRepairer();
         }
         for (let i = 0; i < repairers.length; ++i) {
-            roleRepairer.run(Game.getObjectById(repairers[i]));
+            roleRepairer.run(Game.getObjectById(repairers[i]), room);
         }
     }
 };
@@ -842,25 +787,24 @@ function newRepairer() {
     });
 }
 
-// global
+// MyMemory
 const loop = function () {
     if (Game.cpu.bucket == 10000) {
         Game.cpu.generatePixel();
     }
     if (Game.spawns.Spawn1 != undefined) {
-        // refresh global variable
-        if (Game.time % 100 == 0) {
-            refreshGlobal();
-        }
         // refresh memory
-        memoryRefresh.refresh();
-        if (Game.spawns.Spawn1 != undefined) {
+        if (Game.time % 10 == 0) {
+            memoryRefresh.refresh();
+        }
+        for (let name in Memory.rooms) {
+            let room = Memory.rooms[name];
             // run tasks
-            harvestTask.run();
-            transferTask.run();
-            buildTask.run();
-            upgradeTask.run();
-            repairTask.run();
+            harvestTask.run(room);
+            transferTask.run(room);
+            buildTask.run(room);
+            upgradeTask.run(room);
+            repairTask.run(room);
             // run structures
             for (let name in Game.structures) {
                 let structure = Game.structures[name];
@@ -869,7 +813,7 @@ const loop = function () {
                         structureTower.run(structure);
                         break;
                     case STRUCTURE_LINK:
-                        structureLink.run(structure);
+                        structureLink.run(structure, room);
                         break;
                 }
             }

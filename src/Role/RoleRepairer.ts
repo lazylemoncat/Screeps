@@ -1,7 +1,5 @@
-import { globalStructure } from "@/global/GlobalStructure";
-
 export const roleRepairer = {
-  run: function(creep: Creep): void {
+  run: function(creep: Creep, room: RoomMemory): void {
     if(creep.memory.repairing && creep.store[RESOURCE_ENERGY] == 0) {
       creep.memory.repairing = false;
       global.repairerTarget = null;
@@ -13,7 +11,7 @@ export const roleRepairer = {
       goRepair(creep);
       backRoom(creep);
     } else {
-      goGetEnergy(creep);
+      goGetEnergy(creep, room);
     }
   }
 }
@@ -59,13 +57,13 @@ function goRepair(creep: Creep): void {
   }
 }
 
-function goGetEnergy(creep: Creep): void {
+function goGetEnergy(creep: Creep, room: RoomMemory): void {
   let targetEnergy: AnyStoreStructure = creep.pos.findClosestByPath(FIND_STRUCTURES, 
     {filter: (structure) => {return (structure.structureType == STRUCTURE_CONTAINER ||
     structure.structureType == STRUCTURE_STORAGE)
     && structure.store[RESOURCE_ENERGY] > 0}});
   if (targetEnergy == null) {
-    let targetsource: Source = globalStructure.sources[0]
+    let targetsource: Source = Game.getObjectById(room.sources[0]);
     if(creep.harvest(targetsource) == ERR_NOT_IN_RANGE) {
       creep.moveTo(targetsource);
     }

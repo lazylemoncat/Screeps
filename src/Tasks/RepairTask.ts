@@ -1,16 +1,15 @@
 import { roleRepairer } from "../Role/RoleRepairer";
-import { globalStructure } from "../global/GlobalStructure";
 import { newCreepBody } from "../NewCreep/NewCreepBodys";
 
 export const repairTask = {
-  run: function() {
+  run: function(room: RoomMemory) {
     let repairers: Id<Creep>[] = Memory.roles.repaiers;
-    let containers: StructureContainer[] = globalStructure.containers;
+    let containers: Id<StructureContainer>[] = room.containers;
     if (repairers.length < 1 && containers.length > 0) {
       newRepairer();
     }
     for (let i = 0; i < repairers.length; ++i) {
-      roleRepairer.run(Game.getObjectById(repairers[i]));
+      roleRepairer.run(Game.getObjectById(repairers[i]), room);
     }
   }
 }

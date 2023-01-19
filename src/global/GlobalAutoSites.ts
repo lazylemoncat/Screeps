@@ -1,4 +1,4 @@
-import { globalStructure } from "./GlobalStructure";
+/* import { globalStructure } from "./GlobalStructure";
 
 export const globalAutoSites = {
   run: function() {
@@ -33,4 +33,4 @@ function creatContainerSites() {
     let pos = new RoomPosition(posX, posY, Game.spawns.Spawn1.room.name);
     pos.createConstructionSite(STRUCTURE_CONTAINER);
   }
-}
+} */

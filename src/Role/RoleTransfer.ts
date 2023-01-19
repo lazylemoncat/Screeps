@@ -1,5 +1,4 @@
 import { tasks } from "../Tasks/Tasks";
-import { globalStructure } from "../global/GlobalStructure";
 
 export const roleTransfer = {
   isTransfering: function (creep: Creep): boolean {
@@ -14,15 +13,15 @@ export const roleTransfer = {
 
   goTransfer: function (creep: Creep, task: Id<Structure>) {
     creep.memory.carrierTarget = task;
-    let target: Structure = Game.getObjectById(task);
-    if (target == null) {
+    let target: AnyStoreStructure = Game.getObjectById(task) as AnyStoreStructure;
+    if (target == null || target.store.getFreeCapacity(RESOURCE_ENERGY) == 0) {
       for (let key in tasks.transfer) {
         if (tasks.transfer[key].includes(task)) {
           tasks.transfer[key].splice(tasks.transfer[key].indexOf(task), 1);
-          creep.memory.carrierTarget = null;
           break;
         }
       }
+      creep.memory.carrierTarget = null;
       return;
     }
     let type = target.structureType;
@@ -30,7 +29,7 @@ export const roleTransfer = {
     res = creep.transfer(target, RESOURCE_ENERGY);
     switch (res) {
       case OK: creep.memory.carrierTarget = null; break;
-      case ERR_NOT_IN_RANGE: creep.moveTo(target, {reusePath: 10}); break;
+      case ERR_NOT_IN_RANGE: creep.moveTo(target, {reusePath: 1}); break;
     }
     tasks.transfer[type].splice(tasks.transfer[type].indexOf(task), 1);
     return;
@@ -55,7 +54,7 @@ export const roleTransfer = {
       target.memory.waiting = creep.id;
       switch (res) {
         case OK: creep.memory.carrierTarget = null; target.memory.waiting = null; break;
-        case ERR_NOT_IN_RANGE: creep.moveTo(target, {reusePath: 10}); break;
+        case ERR_NOT_IN_RANGE: creep.moveTo(target, {reusePath: 1}); break;
       }
       tasks.withdraw.creep.splice(tasks.withdraw.creep.indexOf(task), 1);
     } else {
@@ -63,7 +62,7 @@ export const roleTransfer = {
       res = creep.withdraw(target, RESOURCE_ENERGY);
       switch (res) {
         case OK: creep.memory.carrierTarget = null; break;
-        case ERR_NOT_IN_RANGE: creep.moveTo(target, {reusePath: 10}); break;
+        case ERR_NOT_IN_RANGE: creep.moveTo(target, {reusePath: 1}); break;
       }
       tasks.withdraw[type].splice(tasks.withdraw[type].indexOf(task), 1);
     }  

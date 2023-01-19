@@ -1,14 +1,13 @@
 import { newCreepBody } from "../NewCreep/NewCreepBodys";
-import { globalStructure } from "../global/GlobalStructure";
 import { roleTransfer } from "../Role/RoleTransfer";
 import { tasks } from "./Tasks";
 
 export const transferTask = {
-  run: function() {
-    newTransfer();
+  run: function(room: RoomMemory) {
+    newTransfer(room);
 
-    let withdrawTask: Id<Creep | Structure>[] = tasks.returnWithdraw();
-    let transferTask: Id<Structure>[] = findTransferTask();
+    let withdrawTask: Id<Creep | Structure>[] = tasks.returnWithdraw(room);
+    let transferTask: Id<Structure>[] = tasks.returnTransfer(room);
     let transferIndex = 0;
     let withdrawIndex = 0;
     for (let i = 0; i < Memory.roles.transfers.length; ++i) {
@@ -30,13 +29,13 @@ export const transferTask = {
   }
 }
 
-function newTransfer(): void{
+function newTransfer(room: RoomMemory): void{
   if (Game.spawns['Spawn1'].memory.shouldSpawn != null) {
     return;
   }
   let harvesters = Memory.roles.harvesters;
   let transfers = Memory.roles.transfers;
-  let sources = globalStructure.sources;
+  let sources = room.sources;
   if (transfers.length >= harvesters.length || transfers.length >= sources.length) {
       return;
   }
@@ -45,32 +44,4 @@ function newTransfer(): void{
   let newName: string = 'Transfer' + Game.time;
   Game.spawns['Spawn1'].spawnCreep(newCreepBody('transfer'), newName, {memory: {
     role: 'transfer',}});
-}
-
-function findTransferTask(): Id<Structure>[] {
-  spawnTransfer();
-  extensionTransfer();
-  towerTransfer();
-  containerTransfer();
-  storageTransfer();
-  return tasks.returnTransfer();
-}
-
-function spawnTransfer() {
-  
-}
-
-function extensionTransfer() {
-
-}
-
-function towerTransfer() {
-
-}
-function containerTransfer() {
-
-}
-
-function storageTransfer() {
-
 }

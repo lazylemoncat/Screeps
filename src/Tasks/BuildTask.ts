@@ -1,16 +1,15 @@
 import { roleBuilder } from "../Role/RoleBuilder";
-import { globalStructure } from "../global/GlobalStructure";
 import { newCreepBody } from "../NewCreep/NewCreepBodys";
 
 export const buildTask = {
-  run: function() {
+  run: function(room: RoomMemory) {
     let builders: Id<Creep>[] = Memory.roles.builders;
-    let sites: ConstructionSite[] = globalStructure.sites;
+    let sites: Id<ConstructionSite>[] = room.sites;
     if (sites.length > 0 && builders.length < 1) {
       newBuilder();
     }
     for (let i = 0; i < builders.length; ++i) {
-      roleBuilder.run(Game.getObjectById(builders[i]));
+      roleBuilder.run(Game.getObjectById(builders[i]), room);
     }
   }
 }

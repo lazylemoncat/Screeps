@@ -9,7 +9,6 @@
       "paths": {
           "@/*": ["./src/*"]
       },
-      //! "strict" : true,
   },
   "exclude": [
       "node_modules",
@@ -17,5 +16,5 @@
   ],
   "include": [
       "src/**/*.ts"
-  ]
+, "src/CreepPototype.js"  ]
 }

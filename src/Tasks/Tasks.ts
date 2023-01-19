@@ -1,5 +1,3 @@
-import { globalStructure } from "@/global/GlobalStructure";
-
 export const tasks = {
   withdraw: {
     creep: [],
@@ -15,8 +13,8 @@ export const tasks = {
     storage: [],
   },
 
-  returnTransfer: function() {
-    findTransferTask();
+  returnTransfer: function(room: RoomMemory) {
+    findTransferTask(room);
     let task: Id<Structure>[] = [];
     for (let key in tasks.transfer) {
       task = task.concat(tasks.transfer[key]);
@@ -24,8 +22,8 @@ export const tasks = {
     return task;
   },
 
-  returnWithdraw: function() {
-    findWithdraw();
+  returnWithdraw: function(room: RoomMemory) {
+    findWithdraw(room);
     let task: Id<Structure>[] = [];
     for (let key in tasks.withdraw) {
       task = task.concat(tasks.withdraw[key]);
@@ -34,38 +32,38 @@ export const tasks = {
   },
 }
 
-function findWithdraw() {
-  linkTask('withdraw');
-  containerTask('withdraw');
-  storageTask('withdraw');
+function findWithdraw(room: RoomMemory) {
+  linkTask('withdraw', room);
+  containerTask('withdraw', room);
+  storageTask('withdraw', room);
 }
 
-function findTransferTask() {
-  transferTask('spawn');
-  transferTask('extension');
-  transferTask('tower');
-  transferTask('container');
-  transferTask('storage');
+function findTransferTask(room: RoomMemory) {
+  transferTask('spawn', room);
+  transferTask('extension', room);
+  transferTask('tower', room);
+  transferTask('container', room);
+  transferTask('storage', room);
 }
 
-function transferTask(type: string) {
-  let targets:AnyStoreStructure[] = (globalStructure.structures as AnyStoreStructure[]).filter(structure =>
-    structure.structureType == type &&
-    Game.getObjectById(structure.id).store.getFreeCapacity(RESOURCE_ENERGY) > 0);
+function transferTask(type: string, room: RoomMemory) {
+  let targets:Id<AnyStructure>[] = room.structures.filter(structure => 
+    Game.getObjectById(structure).structureType == type &&
+    (Game.getObjectById(structure) as AnyStoreStructure).store.getFreeCapacity(RESOURCE_ENERGY) > 0);
     for (let i = 0; i < targets.length; ++i) {
-      if (!tasks.transfer[type].includes(targets[i].id) && 
-          targets[i].pos.findInRange(globalStructure.sources, 2).length == 0) {
-        tasks.transfer[type].push(targets[i].id);
+      if (!tasks.transfer[type].includes(targets[i]) && 
+          Game.getObjectById(targets[i]).pos.findInRange(FIND_SOURCES, 2).length == 0) {
+        tasks.transfer[type].push(targets[i]);
       }
     }
 }
 
-function linkTask(task: string) {
+function linkTask(task: string, room: RoomMemory) {
   switch (task) {
     case 'withdraw': {
-      let links: StructureLink[] = globalStructure.toLinks;
-      for (let i = 0; i < globalStructure.toLinks.length; ++i){
-        let link = Game.getObjectById(links[i].id);
+      let links: Id<StructureLink>[] = room.toLinks;
+      for (let i = 0; i < room.toLinks.length; ++i){
+        let link = Game.getObjectById(links[i]);
         if (link.store[RESOURCE_ENERGY] > 100 && !tasks.withdraw.link.includes(link.id)) {
           tasks.withdraw.link.push(link.id);
         }
@@ -75,13 +73,13 @@ function linkTask(task: string) {
   }
 }
 
-function containerTask(task: string) {
+function containerTask(task: string, room: RoomMemory) {
   switch (task) {
     case 'withdraw': {
-      let containers = globalStructure.containers;
+      let containers: Id<StructureContainer>[] = room.containers;
       for (let i = 0; i < containers.length; ++i) {
-        if (containers[i].pos.findInRange(globalStructure.sources, 1).length != 0) {
-          let container = Game.getObjectById(containers[i].id);
+        if (Game.getObjectById(containers[i]).pos.findInRange(FIND_SOURCES, 1).length != 0) {
+          let container = Game.getObjectById(containers[i]);
           if (container.store[RESOURCE_ENERGY] >= 50 && !tasks.withdraw.container.includes(container.id)) {
             tasks.withdraw.container.push(container.id);
           }
@@ -92,10 +90,10 @@ function containerTask(task: string) {
   }
 }
 
-function storageTask(task: string) {
+function storageTask(task: string, room: RoomMemory) {
   switch (task) {
     case 'withdraw': {
-      let storage = Object.values(Game.rooms)[0].storage;
+      let storage = Game.getObjectById(room.storage);
       if (storage != undefined && !tasks.withdraw.storage.includes(storage.id) &&
           storage.store[RESOURCE_ENERGY] >= 0) {
         tasks.withdraw.storage.push(storage.id);

@@ -6,7 +6,6 @@ export default {
 // 告诉 rollup 他要打包什么
   // 源代码的入口是哪个文件
   input: 'src/main.ts',
-  //
   plugins: [
     // 编辑ts
     typescript({tsconfig: "./tsconfig.json"}),

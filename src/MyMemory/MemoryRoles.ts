@@ -1,7 +1,8 @@
 export const memoryRoles = {
-  refresh: function() {
+  refresh: function(): void {
     let roles = returnIds();
     Memory.roles = {
+      // Id<Creep>[]
       harvesters: roles.harvester,
       transfers: roles.transfer,
       upgraders: roles.upgrader,

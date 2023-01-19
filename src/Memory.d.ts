@@ -1,6 +1,6 @@
 interface Memory {
-  room: string[],
   roles: {
+    // Creep[]
     harvesters?: Id<Creep>[],
     transfers?: Id<Creep>[],
     upgraders?: Id<Creep>[],
@@ -20,5 +20,6 @@ interface CreepMemory {
   repairing?: boolean,
 }
 interface SpawnMemory {
+  // next creep's role
   shouldSpawn?: string,
 }
