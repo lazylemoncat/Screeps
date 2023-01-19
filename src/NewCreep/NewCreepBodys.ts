@@ -1,7 +1,7 @@
 export const newCreepBody = function(role: String): BodyPartConstant[] {
   // MOVE 50,WORK 100,CARRY 50,ATTACK 80,RANGED_ATTACK 150,HEAL 250,CLAIM 600,TOUGH 10
   let capacity: number = Game.spawns.Spawn1.room.energyCapacityAvailable;
-  if (capacity == 300 || Object.getOwnPropertyNames(Memory.creeps).length < 7 ) {
+  if (capacity == 300 || Object.getOwnPropertyNames(Memory.creeps).length < 4 ) {
     switch (role) {
       case 'harvester' : return [WORK, CARRY, MOVE];
       case 'upgrader' : return [WORK, CARRY, MOVE];

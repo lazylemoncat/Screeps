@@ -24,10 +24,10 @@ function creatContainerSites() {
     pos.createConstructionSite(STRUCTURE_CONTAINER);
   }
   let contronller: StructureController = Object.values(Game.rooms)[0].controller;
-  let containers = contronller.pos.findInRange(globalStructure.containers, 1);
+  let containers = contronller.pos.findInRange(globalStructure.containers, 2);
   let sites: ConstructionSite[] = contronller.pos.findInRange(FIND_MY_CONSTRUCTION_SITES, 2);
   if (containers[0] == undefined && sites[0] == undefined) {
-    let path: PathStep[] = Game.spawns.Spawn1.pos.findPathTo(contronller);
+    let path: PathStep[] = Game.spawns.Spawn1.pos.findPathTo(contronller, {ignoreCreeps: true});
     let posX = path[path.length - 3].x;
     let posY = path[path.length - 3].y;
     let pos = new RoomPosition(posX, posY, Game.spawns.Spawn1.room.name);

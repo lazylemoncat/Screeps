@@ -7,11 +7,10 @@ import { structureLink } from './Structure/StructureLink';
 import { structureTower } from './Structure/StructureTower';
 // tasks
 import { harvestTask } from './Tasks/HarvestTask';
+import { transferTask } from './Tasks/TransferTask';
 import { upgradeTask } from './Tasks/UpgradeTask';
 import { buildTask } from './Tasks/BuildTask';
 import { repairTask } from './Tasks/RepairTask';
-// CreepPototype.ts
-import './Role/CreepPototype'
 
 export const loop = function (): void {
   if(Game.cpu.bucket == 10000) {
@@ -27,8 +26,9 @@ export const loop = function (): void {
     if (Game.spawns.Spawn1 != undefined) {
       // run tasks
       harvestTask.run();
-      upgradeTask.run();
+      transferTask.run();
       buildTask.run();
+      upgradeTask.run();
       repairTask.run();
       // run structures
       for (let name in Game.structures) {

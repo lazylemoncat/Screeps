@@ -1,3 +1,4 @@
+import { tasks } from "../Tasks/Tasks";
 import { globalStructure } from "../global/GlobalStructure";
 
 export const roleHarvester = {
@@ -20,7 +21,7 @@ function goHarvest(creep: Creep, transfered: boolean): void {
       creep.store.getFreeCapacity(RESOURCE_ENERGY) == 0 && !transfered) {
     return;
   }
-  let container: StructureContainer[] = creep.pos.findInRange(globalStructure.containers, 1);
+  let container: StructureContainer[] = source.pos.findInRange(globalStructure.containers, 1);
   if (container[0] != undefined) {
     if (!creep.pos.isEqualTo(container[0])) {
       creep.moveTo(container[0]);
@@ -30,12 +31,17 @@ function goHarvest(creep: Creep, transfered: boolean): void {
 }
 
 function transferEnergy(creep: Creep): boolean {
+  if (Game.getObjectById(creep.memory.waiting) != null) {
+    return;
+  }
   let links: StructureLink[] = globalStructure.links;
   let containers: StructureContainer[] = globalStructure.containers;
   let sources: Source[] = globalStructure.sources;
   if (links.length == 0 && containers.length < sources.length &&
       creep.pos.findInRange(containers, 1).length == 0) {
-    creep.transferTo(creep);
+    if (!tasks.withdraw.creep.includes(creep.id)) {
+      tasks.withdraw.creep.push(creep.id);
+    }
     return false;
   }
   if (!transfer(creep)) {

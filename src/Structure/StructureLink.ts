@@ -8,7 +8,7 @@ export const structureLink = {
         break;
       }
     }
-  }
+  },
 }
 
 function transfer(link: StructureLink): void {
