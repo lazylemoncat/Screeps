@@ -316,6 +316,7 @@ function storageTask(task, room) {
 const roleHarvester = {
     run: function (creep, room) {
         let transfered = false;
+        // avoid wasteing
         if (creep.store.getFreeCapacity() < creep.getActiveBodyparts(WORK) * 2) {
             transfered = transferEnergy(creep, room);
         }

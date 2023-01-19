@@ -3,6 +3,7 @@ import { tasks } from "../Tasks/Tasks";
 export const roleHarvester = {
   run: function(creep: Creep, room: RoomMemory): void {
     let transfered: boolean = false;
+    // avoid wasteing
     if (creep.store.getFreeCapacity() < creep.getActiveBodyparts(WORK) * 2) {
       transfered = transferEnergy(creep, room);
     }
