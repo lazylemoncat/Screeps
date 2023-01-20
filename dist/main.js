@@ -807,8 +807,9 @@ function newRepairer() {
 }
 
 const roleClaimer = {
-    run: function (creep, flagName) {
-        let flag = Game.flags[flagName];
+    run: function (creep, room) {
+        let flag = Game.flags[creep.pos.createFlag('claim')];
+        flag.setPosition(new RoomPosition(1, 1, room));
         if (creep.pos.roomName != flag.room.name) {
             creep.moveTo(flag.pos.x, flag.pos.y);
             return;
@@ -823,23 +824,14 @@ const roleClaimer = {
 
 const claimTask = {
     run: function (room) {
-        let pos = new RoomPosition(1, 1, room);
-        if (Game.rooms[pos.roomName] != undefined &&
-            Game.rooms[pos.roomName].find(FIND_STRUCTURES).filter(structure => structure.structureType == STRUCTURE_SPAWN).length > 0) {
-            Game.flags.claim.remove();
+        if (Game.rooms[room] != undefined && Game.rooms[room].controller.owner.username == 'LazyKitty') {
             return;
-        }
-        if (Game.flags.claim == undefined) {
-            Game.flags.claim.setPosition(Game.rooms[pos.roomName].controller.pos);
         }
         if (Game.flags.claim.room.controller.owner.username == null) {
             newClaimer();
             for (let i = 0; i < Memory.roles.claimers.length; ++i) {
-                roleClaimer.run(Game.getObjectById(Memory.roles.claimers[i]), 'claim');
+                roleClaimer.run(Game.getObjectById(Memory.roles.claimers[i]), room);
             }
-        }
-        else if (Game.flags.claim.room.controller.owner.username == 'LazyKitty') {
-            buildTask.run(Memory.rooms[Game.flags.claim.room.name]);
         }
     }
 };

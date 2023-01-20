@@ -4,23 +4,14 @@ import { buildTask } from "./BuildTask";
 
 export const claimTask = {
   run: function(room: string) {
-    let pos = new RoomPosition(1, 1, room);
-    if (Game.rooms[pos.roomName] != undefined &&
-        Game.rooms[pos.roomName].find(FIND_STRUCTURES).filter(structure =>
-          structure.structureType == STRUCTURE_SPAWN).length > 0) {
-      Game.flags.claim.remove();
+    if (Game.rooms[room] != undefined && Game.rooms[room].controller.owner.username == 'LazyKitty') {
       return;
-    }
-    if (Game.flags.claim == undefined) {
-      Game.flags.claim.setPosition(Game.rooms[pos.roomName].controller.pos);
     }
     if (Game.flags.claim.room.controller.owner.username == null) {
       newClaimer();
       for (let i = 0; i < Memory.roles.claimers.length; ++i) {
-        roleClaimer.run(Game.getObjectById(Memory.roles.claimers[i]), 'claim');
+        roleClaimer.run(Game.getObjectById(Memory.roles.claimers[i]), room);
       }
-    } else if (Game.flags.claim.room.controller.owner.username == 'LazyKitty') {
-      buildTask.run(Memory.rooms[Game.flags.claim.room.name]);
     }
   }
 }
