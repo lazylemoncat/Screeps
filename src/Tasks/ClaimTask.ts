@@ -1,17 +1,14 @@
 import { newCreepBody } from "@/NewCreep/NewCreepBodys";
 import { roleClaimer } from "@/Role/RoleClaimer";
-import { buildTask } from "./BuildTask";
 
 export const claimTask = {
   run: function(room: string) {
     if (Game.rooms[room] != undefined && Game.rooms[room].controller.owner.username == 'LazyKitty') {
       return;
     }
-    if (Game.flags.claim.room.controller.owner.username == null) {
-      newClaimer();
-      for (let i = 0; i < Memory.roles.claimers.length; ++i) {
-        roleClaimer.run(Game.getObjectById(Memory.roles.claimers[i]), room);
-      }
+    newClaimer();
+    for (let i = 0; i < Memory.roles.claimers.length; ++i) {
+      roleClaimer.run(Game.getObjectById(Memory.roles.claimers[i]), room);
     }
   }
 }
