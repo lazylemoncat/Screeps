@@ -824,7 +824,8 @@ const roleClaimer = {
 const claimTask = {
     run: function (room) {
         let pos = new RoomPosition(1, 1, room);
-        if (Game.rooms[pos.roomName].find(FIND_STRUCTURES).filter(structure => structure.structureType == STRUCTURE_SPAWN).length > 0) {
+        if (Game.rooms[pos.roomName] != undefined &&
+            Game.rooms[pos.roomName].find(FIND_STRUCTURES).filter(structure => structure.structureType == STRUCTURE_SPAWN).length > 0) {
             Game.flags.claim.remove();
             return;
         }
