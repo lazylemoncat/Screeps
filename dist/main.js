@@ -823,12 +823,12 @@ const roleClaimer = {
 
 const claimTask = {
     run: function (room) {
-        if (Game.rooms[room].find(FIND_STRUCTURES).filter(structure => structure.structureType == STRUCTURE_SPAWN).length > 0) {
+        let pos = new RoomPosition(1, 1, room);
+        if (Game.rooms[pos.roomName].find(FIND_STRUCTURES).filter(structure => structure.structureType == STRUCTURE_SPAWN).length > 0) {
             Game.flags.claim.remove();
             return;
         }
         if (Game.flags.claim == undefined) {
-            let pos = new RoomPosition(1, 1, room);
             Game.flags.claim.setPosition(Game.rooms[pos.roomName].controller.pos);
         }
         if (Game.flags.claim.room.controller.owner.username == null) {
