@@ -28,7 +28,7 @@ export const loop = function (): void {
       buildTask.run(room);
       upgradeTask.run(room);
       repairTask.run(room);
-      //claimTask.run('W59S26');
+      claimTask.run('W59S26');
       // run structures
       for (let name in Game.structures) {
         let structure = Game.structures[name];
