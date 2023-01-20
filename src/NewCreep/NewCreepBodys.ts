@@ -59,6 +59,13 @@ export const newCreepBody = function(role: String): BodyPartConstant[] {
         }
         return bodys;
       }
+      case 'claimer': {
+        if (capacity >= 650) {
+          return [CLAIM, MOVE];
+        } else {
+          return [];
+        }
+      }
     }
   }
 }

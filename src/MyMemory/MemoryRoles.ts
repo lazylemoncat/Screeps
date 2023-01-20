@@ -19,6 +19,7 @@ function returnIds() {
     upgrader: [],
     builder: [],
     repairer: [],
+    claimer: [],
   }
   for (let name in Game.creeps) {
     let creep = Game.creeps[name];

@@ -1,8 +1,8 @@
 export const roleClaimer = {
-  run: function(creep: Creep): void {
-    let pos = new RoomPosition(1,1,'W59S26');
-    if (creep.pos.roomName != pos.roomName) {
-      creep.moveTo(pos.x, pos.y);
+  run: function(creep: Creep, flagName: string): void {
+    let flag = Game.flags[flagName];
+    if (creep.pos.roomName != flag.room.name) {
+      creep.moveTo(flag.pos.x, flag.pos.y);
       return;
     }
     if(creep.room.controller) {

@@ -6,6 +6,7 @@ interface Memory {
     upgraders?: Id<Creep>[],
     builders?: Id<Creep>[],
     repaiers?: Id<Creep>[],
+    claimers?: Id<Creep>[],
   },
 }
 interface CreepMemory {

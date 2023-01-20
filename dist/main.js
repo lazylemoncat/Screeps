@@ -31,6 +31,7 @@ function returnIds() {
         upgrader: [],
         builder: [],
         repairer: [],
+        claimer: [],
     };
     for (let name in Game.creeps) {
         let creep = Game.creeps[name];
@@ -214,6 +215,14 @@ const newCreepBody = function (role) {
                         break;
                 }
                 return bodys;
+            }
+            case 'claimer': {
+                if (capacity >= 650) {
+                    return [CLAIM, MOVE];
+                }
+                else {
+                    return [];
+                }
             }
         }
     }
@@ -460,7 +469,7 @@ const roleTransfer = {
     goWithdraw: function (creep, task) {
         let target = Game.getObjectById(task);
         creep.memory.carrierTarget = task;
-        if (target == null) {
+        if (target == null || target.store[RESOURCE_ENERGY] == 0) {
             for (let key in tasks.withdraw) {
                 if (tasks.withdraw[key].includes(target)) {
                     tasks.withdraw[key].splice(tasks.withdraw[key].indexOf(task), 1);
