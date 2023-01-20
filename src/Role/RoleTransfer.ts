@@ -29,7 +29,7 @@ export const roleTransfer = {
     res = creep.transfer(target, RESOURCE_ENERGY);
     switch (res) {
       case OK: creep.memory.carrierTarget = null; break;
-      case ERR_NOT_IN_RANGE: creep.moveTo(target, {reusePath: 1}); break;
+      case ERR_NOT_IN_RANGE: creep.moveTo(target); break;
     }
     tasks.transfer[type].splice(tasks.transfer[type].indexOf(task), 1);
     return;
@@ -54,7 +54,7 @@ export const roleTransfer = {
       target.memory.waiting = creep.id;
       switch (res) {
         case OK: creep.memory.carrierTarget = null; target.memory.waiting = null; break;
-        case ERR_NOT_IN_RANGE: creep.moveTo(target, {reusePath: 1}); break;
+        case ERR_NOT_IN_RANGE: creep.moveTo(target); break;
       }
       tasks.withdraw.creep.splice(tasks.withdraw.creep.indexOf(task), 1);
     } else {
@@ -62,7 +62,7 @@ export const roleTransfer = {
       res = creep.withdraw(target, RESOURCE_ENERGY);
       switch (res) {
         case OK: creep.memory.carrierTarget = null; break;
-        case ERR_NOT_IN_RANGE: creep.moveTo(target, {reusePath: 1}); break;
+        case ERR_NOT_IN_RANGE: creep.moveTo(target); break;
       }
       tasks.withdraw[type].splice(tasks.withdraw[type].indexOf(task), 1);
     }  

@@ -9,6 +9,7 @@ import { transferTask } from './Tasks/TransferTask';
 import { upgradeTask } from './Tasks/UpgradeTask';
 import { buildTask } from './Tasks/BuildTask';
 import { repairTask } from './Tasks/RepairTask';
+import { claimTask } from './Tasks/ClaimTask';
 
 export const loop = function (): void {
   if(Game.cpu.bucket == 10000) {
@@ -27,6 +28,7 @@ export const loop = function (): void {
       buildTask.run(room);
       upgradeTask.run(room);
       repairTask.run(room);
+      //claimTask.run('W59S26');
       // run structures
       for (let name in Game.structures) {
         let structure = Game.structures[name];

@@ -460,7 +460,7 @@ const roleTransfer = {
                 creep.memory.carrierTarget = null;
                 break;
             case ERR_NOT_IN_RANGE:
-                creep.moveTo(target, { reusePath: 1 });
+                creep.moveTo(target);
                 break;
         }
         tasks.transfer[type].splice(tasks.transfer[type].indexOf(task), 1);
@@ -489,7 +489,7 @@ const roleTransfer = {
                     target.memory.waiting = null;
                     break;
                 case ERR_NOT_IN_RANGE:
-                    creep.moveTo(target, { reusePath: 1 });
+                    creep.moveTo(target);
                     break;
             }
             tasks.withdraw.creep.splice(tasks.withdraw.creep.indexOf(task), 1);
@@ -502,7 +502,7 @@ const roleTransfer = {
                     creep.memory.carrierTarget = null;
                     break;
                 case ERR_NOT_IN_RANGE:
-                    creep.moveTo(target, { reusePath: 1 });
+                    creep.moveTo(target);
                     break;
             }
             tasks.withdraw[type].splice(tasks.withdraw[type].indexOf(task), 1);
@@ -824,6 +824,7 @@ const loop = function () {
             buildTask.run(room);
             upgradeTask.run(room);
             repairTask.run(room);
+            //claimTask.run('W59S26');
             // run structures
             for (let name in Game.structures) {
                 let structure = Game.structures[name];
