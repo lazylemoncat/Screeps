@@ -258,7 +258,7 @@ const newCreepBody = function (role, spawn) {
                 let bodys = [];
                 for (capacity /= 50; capacity >= 2; capacity -= 2) {
                     bodys.push(MOVE, CARRY);
-                    if (bodys.length == 12)
+                    if (bodys.length == 30)
                         break;
                 }
                 return bodys;
