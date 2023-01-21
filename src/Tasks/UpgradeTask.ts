@@ -1,7 +1,6 @@
 import { roleUpgrader } from "../Role/RoleUpgrader";
 import { newCreepBody } from "../NewCreep/NewCreepBodys";
 import { memoryDelete } from "@/MyMemory/MemoryDelete";
-import { memoryAppend } from "@/MyMemory/MemoryAppend";
 
 export const upgradeTask = {
   run: function(room: RoomMemory): void {

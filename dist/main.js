@@ -293,6 +293,7 @@ function findWithdraw(room) {
     withdrawTask('link', room);
     withdrawTask('container', room);
     withdrawTask('storage', room);
+    return;
 }
 function findTransferTask(room) {
     transferTask$1('spawn', room);
@@ -300,6 +301,7 @@ function findTransferTask(room) {
     transferTask$1('tower', room);
     transferTask$1('container', room);
     transferTask$1('storage', room);
+    return;
 }
 function transferTask$1(type, room) {
     let obj = {};
@@ -308,7 +310,7 @@ function transferTask$1(type, room) {
     for (let i = 0; i < targets.length; ++i) {
         let energy = Game.getObjectById(targets[i]).store.getFreeCapacity(RESOURCE_ENERGY);
         obj = { type: type, id: targets[i], energy: energy };
-        if (!tasks.transfer.find(i => i.id == targets[i]) &&
+        if (!tasks.transfer.some(i => i.id == obj.id) &&
             Game.getObjectById(targets[i]).pos.findInRange(FIND_SOURCES, 2).length == 0) {
             tasks.transfer.push(obj);
         }
@@ -323,8 +325,8 @@ function withdrawTask(type, room) {
             for (let i = 0; i < links.length; ++i) {
                 let link = Game.getObjectById(links[i]);
                 let energy = link.store[RESOURCE_ENERGY];
-                if (energy > 100 && !tasks.withdraw.find(i => i.id == links[i])) {
-                    obj = { type: 'link', id: link.id, energy: energy };
+                obj = { type: 'link', id: link.id, energy: energy };
+                if (energy > 100 && !tasks.withdraw.find(i => i.id == obj.id)) {
                     tasks.withdraw.push(obj);
                 }
             }
@@ -336,8 +338,8 @@ function withdrawTask(type, room) {
                 if (Game.getObjectById(containers[i]).pos.findInRange(FIND_SOURCES, 1).length != 0) {
                     let container = Game.getObjectById(containers[i]);
                     let energy = container.store[RESOURCE_ENERGY];
-                    if (energy >= 50 && !tasks.withdraw.find(i => i.id == container[i])) {
-                        obj = { type: 'container', id: container.id, energy: energy };
+                    obj = { type: 'container', id: container.id, energy: energy };
+                    if (energy >= 50 && !tasks.withdraw.find(i => i.id == obj.id)) {
                         tasks.withdraw.push(obj);
                     }
                 }
@@ -346,17 +348,17 @@ function withdrawTask(type, room) {
         }
         case 'storage': {
             let storage = Game.getObjectById(room.storage);
-            if (storage != undefined && !tasks.withdraw.find(i => i.id == storage)) {
+            if (storage != undefined) {
                 let energy = storage.store[RESOURCE_ENERGY];
-                if (energy < 50) {
-                    break;
-                }
                 obj = { type: 'storage', id: storage.id, energy: energy };
-                tasks.withdraw.push(obj);
+                if (!tasks.withdraw.find(i => i.id == obj.id) && energy >= 50) {
+                    tasks.withdraw.push(obj);
+                }
             }
             break;
         }
     }
+    return;
 }
 
 const roleHarvester = {
@@ -640,6 +642,7 @@ function goGetEnergy$2(creep, room) {
         if (creep.withdraw(container, RESOURCE_ENERGY) == ERR_NOT_IN_RANGE) {
             creep.moveTo(container);
         }
+        return;
     }
     else {
         let target = creep.room.find(FIND_STRUCTURES).filter(i => (i.structureType == STRUCTURE_CONTAINER ||

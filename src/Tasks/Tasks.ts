@@ -25,18 +25,20 @@ export const tasks = {
   },
 }
 
-function findWithdraw(room: RoomMemory) {
+function findWithdraw(room: RoomMemory): void {
   withdrawTask('link', room);
   withdrawTask('container', room);
   withdrawTask('storage', room);
+  return;
 }
 
-function findTransferTask(room: RoomMemory) {
+function findTransferTask(room: RoomMemory): void {
   transferTask('spawn', room);
   transferTask('extension', room);
   transferTask('tower', room);
   transferTask('container', room);
   transferTask('storage', room);
+  return;
 }
 
 function transferTask(type: string, room: RoomMemory): void {
@@ -47,7 +49,7 @@ function transferTask(type: string, room: RoomMemory): void {
   for (let i = 0; i < targets.length; ++i) {
     let energy = Game.getObjectById(targets[i]).store.getFreeCapacity(RESOURCE_ENERGY);
     obj = {type: type, id: targets[i], energy: energy};
-    if (!tasks.transfer.find(i => i.id == targets[i]) && 
+    if (!tasks.transfer.some(i => i.id == obj.id) && 
         Game.getObjectById(targets[i]).pos.findInRange(FIND_SOURCES, 2).length == 0) {
       tasks.transfer.push(obj);
     }
@@ -55,7 +57,7 @@ function transferTask(type: string, room: RoomMemory): void {
   return;
 }
 
-function withdrawTask(type: string, room: RoomMemory) {
+function withdrawTask(type: string, room: RoomMemory): void {
   let obj: {type?: string, id?: Id<AnyStoreStructure>, energy?: number} = {};
   switch (type) {
     case 'link': {
@@ -63,8 +65,8 @@ function withdrawTask(type: string, room: RoomMemory) {
       for (let i = 0; i < links.length; ++i){
         let link = Game.getObjectById(links[i]);
         let energy = link.store[RESOURCE_ENERGY];
-        if (energy > 100 && !tasks.withdraw.find(i => i.id == links[i])) {
-          obj = {type: 'link', id: link.id, energy: energy};
+        obj = {type: 'link', id: link.id, energy: energy};
+        if (energy > 100 && !tasks.withdraw.find(i => i.id == obj.id)) {
           tasks.withdraw.push(obj);
         }
       }
@@ -76,8 +78,8 @@ function withdrawTask(type: string, room: RoomMemory) {
         if (Game.getObjectById(containers[i]).pos.findInRange(FIND_SOURCES, 1).length != 0) {
           let container = Game.getObjectById(containers[i]);
           let energy = container.store[RESOURCE_ENERGY];
-          if (energy >= 50 && !tasks.withdraw.find(i => i.id == container[i])) {
-            obj = {type: 'container', id: container.id, energy: energy};
+          obj = {type: 'container', id: container.id, energy: energy};
+          if (energy >= 50 && !tasks.withdraw.find(i => i.id == obj.id)) {
             tasks.withdraw.push(obj);
           }
         }
@@ -86,15 +88,15 @@ function withdrawTask(type: string, room: RoomMemory) {
     }
     case 'storage': {
       let storage = Game.getObjectById(room.storage);
-      if (storage != undefined && !tasks.withdraw.find(i => i.id == storage)) {
+      if (storage != undefined) {
         let energy = storage.store[RESOURCE_ENERGY];
-        if (energy < 50) {
-          break;
-        }
         obj = {type: 'storage', id: storage.id, energy: energy};
-        tasks.withdraw.push(obj);
+        if (!tasks.withdraw.find(i => i.id == obj.id) && energy >= 50) {
+          tasks.withdraw.push(obj);
+        }
       }
       break;
     }
   }
+  return;
 }

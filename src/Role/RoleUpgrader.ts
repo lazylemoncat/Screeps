@@ -31,6 +31,7 @@ function goGetEnergy(creep: Creep, room: RoomMemory): void {
     if (creep.withdraw(container, RESOURCE_ENERGY) == ERR_NOT_IN_RANGE) {
       creep.moveTo(container);
     }
+    return;
   } else {
     let target = creep.room.find(FIND_STRUCTURES).filter(i => (i.structureType == STRUCTURE_CONTAINER ||
       i.structureType == STRUCTURE_STORAGE) && 
