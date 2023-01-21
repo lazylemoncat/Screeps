@@ -897,7 +897,7 @@ function newRepairer(room) {
     }
     let repairers = Memory.roles.repairers;
     let containers = room.containers;
-    if (repairers.length >= 1 && containers.length == 0) {
+    if (repairers.length >= 1 || containers.length == 0) {
         return;
     }
     Game.spawns['Spawn1'].memory.shouldSpawn = 'repairer';
