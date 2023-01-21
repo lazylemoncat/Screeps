@@ -1,30 +1,43 @@
 import { roleBuilder } from "../Role/RoleBuilder";
 import { newCreepBody } from "../NewCreep/NewCreepBodys";
 import { roleRepairer } from "@/Role/RoleRepairer";
+import { memoryDelete } from "@/MyMemory/MemoryDelete";
+import { memoryAppend } from "@/MyMemory/MemoryAppend";
 
 export const buildTask = {
-  run: function(room: RoomMemory) {
-    let builders: Id<Creep>[] = Memory.roles.builders;
-    let sites: Id<ConstructionSite>[] = room.sites;
-    if (sites.length > 0 && builders.length < 3) {
-      newBuilder();
-    }
-    for (let i = 0; i < builders.length; ++i) {
-      if (sites.length == 0) {
-        roleRepairer.run(Game.getObjectById(builders[i]), room);
+  run: function(room: RoomMemory): void {
+    newBuilder(room);
+
+    for (let i = 0; i < Memory.roles.builders.length; ++i) {
+      let builder = Game.getObjectById(Memory.roles.builders[i]);
+      if (builder == null) {
+        memoryDelete.delete(i, true, 'builder');
+        continue;
+      }
+      if (room.sites.length == 0) {
+        roleRepairer.run(builder, room);
       } else {
-        roleBuilder.run(Game.getObjectById(builders[i]), room);
+        roleBuilder.run(builder, room);
       }
     }
+    return;
   }
 }
 
-function newBuilder() {
+function newBuilder(room: RoomMemory): void {
   if (Game.spawns['Spawn1'].memory.shouldSpawn != null) {
+    return;
+  }
+  let builders = Memory.roles.builders;
+  let sites = room.sites;
+  if (!(sites.length > 0 && builders.length < 3)) {
     return;
   }
   Game.spawns['Spawn1'].memory.shouldSpawn = 'builder';
   let newName: string = 'Builder' + Game.time;
-  Game.spawns['Spawn1'].spawnCreep(newCreepBody('builder'), newName, {
-    memory: {role: 'builder'}});
+  let bodys = newCreepBody('builder', room.spawns[0]);
+  if (Game.spawns['Spawn1'].spawnCreep(bodys,newName, {memory: {role: 'builder'}}) == OK) {
+    ;
+  }
+  return;
 }

@@ -1,32 +1,42 @@
+import { memoryAppend } from "@/MyMemory/MemoryAppend";
+import { memoryDelete } from "@/MyMemory/MemoryDelete";
 import { newCreepBody } from "../NewCreep/NewCreepBodys";
 import { roleHarvester } from "../Role/RoleHarvester";
 
 export const harvestTask = {
   run: function(room: RoomMemory): void {
     newCreep(room);
+
     for (let i = 0; i < Memory.roles.harvesters.length; ++i) {
-      roleHarvester.run(Game.getObjectById(Memory.roles.harvesters[i]), room);
+      let harvester = Game.getObjectById(Memory.roles.harvesters[i]);
+      if (harvester == null) {
+        memoryDelete.delete(i, true, 'harvester');
+        continue;
+      }
+      roleHarvester.run(harvester, room);
     }
+    return;
   }
 }
 
 function newCreep(room: RoomMemory): void {
   let harvesters = Memory.roles.harvesters;
-  let transfers = Memory.roles.transfers;
+  let carriers = Memory.roles.carriers;
   let sources = room.sources;
   Game.spawns['Spawn1'].memory.shouldSpawn = null;
-  if (harvesters.length <= transfers.length && harvesters.length < sources.length) {
+  if (harvesters.length <= carriers.length && harvesters.length < sources.length) {
     Game.spawns['Spawn1'].memory.shouldSpawn = 'harvester';
-    newHarvester(harvesters, sources.length);
+    newHarvester(harvesters, sources.length, room);
   }
+  return;
 }
 
-function newHarvester(harvesters: Id<Creep>[], sourcesLength: number): void{
-  let newName: string = "Harvester" + Game.time;
+function newHarvester(harvesters: Id<Creep>[], sourcesLength: number, room: RoomMemory): void{
   let posFlag: number = 0;
   for (let i = 0; i < sourcesLength; ++i) {
     for (let j = 0; j < harvesters.length; ++j) {
-      if (i == Game.getObjectById(harvesters[j]).memory.sourcesPosition) {
+      let harvester = Game.getObjectById(harvesters[j]);
+      if (Game.getObjectById(room.sources[i]).id == harvester.memory.sourcesPosition) {
         posFlag += 1;
         break;
       }
@@ -35,6 +45,12 @@ function newHarvester(harvesters: Id<Creep>[], sourcesLength: number): void{
   }
   if (posFlag >= sourcesLength) return;
 
-  Game.spawns['Spawn1'].spawnCreep(newCreepBody('harvester'),
-    newName, {memory:{role: 'harvester', sourcesPosition: posFlag}});
+  let newName: string = "Harvester" + Game.time;
+  let sourceId = Game.getObjectById(room.sources[posFlag]).id as Id<Source>;
+  let memory = {role: 'harvester', sourcesPosition: sourceId};
+  let bodys = newCreepBody('harvester', room.spawns[0]);
+  if (Game.spawns['Spawn1'].spawnCreep(bodys, newName, {memory: memory}) == OK) {
+    ;
+  }
+  return;
 }

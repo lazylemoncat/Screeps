@@ -1,25 +1,37 @@
 import { roleRepairer } from "../Role/RoleRepairer";
 import { newCreepBody } from "../NewCreep/NewCreepBodys";
+import { memoryDelete } from "@/MyMemory/MemoryDelete";
+import { memoryAppend } from "@/MyMemory/MemoryAppend";
 
 export const repairTask = {
-  run: function(room: RoomMemory) {
-    let repairers: Id<Creep>[] = Memory.roles.repaiers;
-    let containers: Id<StructureContainer>[] = room.containers;
-    if (repairers.length < 1 && containers.length > 0) {
-      newRepairer();
+  run: function(room: RoomMemory): void {
+    newRepairer(room);
+    for (let i = 0; i < Memory.roles.repairers.length; ++i) {
+      let repaier = Game.getObjectById(Memory.roles.repairers[i])
+      if (repaier == null) {
+        memoryDelete.delete(i, true, 'repairer');
+        continue;
+      }
+      roleRepairer.run(repaier, room);
     }
-    for (let i = 0; i < repairers.length; ++i) {
-      roleRepairer.run(Game.getObjectById(repairers[i]), room);
-    }
+    return;
   }
 }
 
-function newRepairer() {
+function newRepairer(room: RoomMemory): void {
   if (Game.spawns['Spawn1'].memory.shouldSpawn != null) {
+    return;
+  }
+  let repairers = Memory.roles.repairers;
+  let containers = room.containers;
+  if (repairers.length >= 1 && containers.length == 0) {
     return;
   }
   Game.spawns['Spawn1'].memory.shouldSpawn = 'repairer';
   let newName: string = 'Repairer' + Game.time;
-  Game.spawns['Spawn1'].spawnCreep(newCreepBody('repairer'), newName, {
-    memory: {role: 'repairer'}});
+  let bodys = newCreepBody('repairer', room.spawns[0])
+  if (Game.spawns['Spawn1'].spawnCreep(bodys, newName, {memory: {role: 'repairer'}}) == OK) {
+    ;
+  }
+  return;
 }

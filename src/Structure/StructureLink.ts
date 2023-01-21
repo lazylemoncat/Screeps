@@ -1,11 +1,13 @@
 export const structureLink = {
   run: function(link: StructureLink, room: RoomMemory): void {
+    // fromlink 运输能量给 tolink
     for (let i = 0; i < room.fromLinks.length; ++i) {
       if (room.fromLinks[i] == link.id) {
         transfer(link, room);
         break;
       }
     }
+    return;
   },
 }
 

@@ -1,48 +1,70 @@
+import { memoryAppend } from "@/MyMemory/MemoryAppend";
+import { memoryDelete } from "@/MyMemory/MemoryDelete";
 import { newCreepBody } from "../NewCreep/NewCreepBodys";
-import { roleTransfer } from "../Role/RoleTransfer";
+import { roleCarrier } from "../Role/RoleCarrier";
 import { tasks } from "./Tasks";
 
 export const transferTask = {
-  run: function(room: RoomMemory) {
-    newTransfer(room);
+  run: function(room: RoomMemory): void {
+    newCarrier(room);
 
-    let withdrawTask: Id<Creep | AnyStoreStructure>[] = tasks.returnWithdraw(room);
-    let transferTask: Id<AnyStoreStructure>[] = tasks.returnTransfer(room);
-    let transferIndex = 0;
-    let withdrawIndex = 0;
-    for (let i = 0; i < Memory.roles.transfers.length; ++i) {
-      let transfer: Creep = Game.getObjectById(Memory.roles.transfers[i]);
-      if (transfer.memory.carrierTarget != null) {
-        if (roleTransfer.isTransfering(transfer)) {
-          roleTransfer.goTransfer(transfer, transfer.memory.carrierTarget as Id<AnyStoreStructure>);
+    let withdrawTask: {type: string, id: Id<AnyStoreStructure>, energy: number}[] = tasks.returnWithdraw(room);
+    let transferTask: {type: string, id: Id<AnyStoreStructure>, energy: number}[] = tasks.returnTransfer(room);
+    for (let i = 0; i < Memory.roles.carriers.length; ++i) {
+      let carrier: Creep = Game.getObjectById(Memory.roles.carriers[i]);
+      if (carrier == null) {
+        memoryDelete.delete(i, true, 'carrier');
+        continue;
+      }
+      let isTransfering = roleCarrier.isTransfering(carrier);
+      if (carrier.memory.carrierTarget != null) {
+        if (isTransfering) {
+          roleCarrier.goTransfer(carrier, carrier.memory.carrierTarget as Id<AnyStoreStructure>);
         } else {
-          roleTransfer.goWithdraw(transfer, transfer.memory.carrierTarget)
+          roleCarrier.goWithdraw(carrier, carrier.memory.carrierTarget)
         }
         continue;
       }
-      if (roleTransfer.isTransfering(transfer)) {
-        roleTransfer.goTransfer(transfer, transferTask[transferIndex++]);
+      if (isTransfering) {
+        if (transferTask[0] == undefined) {
+          continue;
+        }
+        roleCarrier.goTransfer(carrier, transferTask[0].id);
+        transferTask[0].energy -= carrier.store[RESOURCE_ENERGY];
+        if (transferTask[0].energy <= 0) {
+          transferTask.shift();
+        }
       } else {
-        roleTransfer.goWithdraw(transfer, withdrawTask[withdrawIndex++]);
+        if (withdrawTask[0] == undefined) {
+          continue;
+        }
+        roleCarrier.goWithdraw(carrier, withdrawTask[0].id);
+        withdrawTask[0].energy -= carrier.store.getFreeCapacity(RESOURCE_ENERGY);
+        if (withdrawTask[0].energy <= 0) {
+          withdrawTask.shift();
+        }
       }
     }
+    return;
   }
 }
 
-function newTransfer(room: RoomMemory): void{
+function newCarrier(room: RoomMemory): void{
   if (Game.spawns['Spawn1'].memory.shouldSpawn != null) {
     return;
   }
   let harvesters = Memory.roles.harvesters;
-  let transfers = Memory.roles.transfers;
+  let carriers = Memory.roles.carriers;
   let sources = room.sources;
-  let transferNum = room.links.length > 0 ? sources.length * 2 : sources.length;
-  if (transfers.length >= harvesters.length && transfers.length >= transferNum) {
+  if (carriers.length >= harvesters.length && carriers.length >= sources.length) {
       return;
   }
-  Game.spawns['Spawn1'].memory.shouldSpawn = 'transfer';
+  Game.spawns['Spawn1'].memory.shouldSpawn = 'carrier';
 
-  let newName: string = 'Transfer' + Game.time;
-  Game.spawns['Spawn1'].spawnCreep(newCreepBody('transfer'), newName, {memory: {
-    role: 'transfer',}});
+  let newName: string = 'Carrier' + Game.time;
+  let bodys = newCreepBody('carrier', room.spawns[0]);
+  if (Game.spawns['Spawn1'].spawnCreep(bodys, newName, {memory: {role: 'carrier',}}) == OK) {
+    ;
+  }
+  return;
 }

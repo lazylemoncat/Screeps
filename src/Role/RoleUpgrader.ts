@@ -19,19 +19,32 @@ function goUpgrade(creep: Creep): void {
   if(creep.upgradeController(creep.room.controller) == ERR_NOT_IN_RANGE) {
     creep.moveTo(creep.room.controller);
   }
+  return;
 }
 
 function goGetEnergy(creep: Creep, room: RoomMemory): void {
-  let targetContainer: AnyStructure = creep.pos.findClosestByPath(FIND_STRUCTURES, {filter :
-    (structure) => (structure.structureType == STRUCTURE_CONTAINER ||
-    structure.structureType == STRUCTURE_STORAGE) &&
-    structure.store[RESOURCE_ENERGY] > 0});
-  if (targetContainer == undefined) {
-    let target: Source = Game.getObjectById(room.sources[0]);
-    if (creep.harvest(target) == ERR_NOT_IN_RANGE) {
-      creep.moveTo(target);
+  let creepNeed = creep.store.getFreeCapacity(RESOURCE_ENERGY);
+  let controller = creep.room.controller;
+  let containers = room.containers.map(i => Game.getObjectById(i));
+  let container = controller.pos.findInRange(containers, 2)[0];
+  if (container != undefined && container.store[RESOURCE_ENERGY] >= creepNeed) {
+    if (creep.withdraw(container, RESOURCE_ENERGY) == ERR_NOT_IN_RANGE) {
+      creep.moveTo(container);
     }
-  } else if (creep.withdraw(targetContainer, RESOURCE_ENERGY) == ERR_NOT_IN_RANGE) {
-    creep.moveTo(targetContainer);
+  } else {
+    let target = creep.room.find(FIND_STRUCTURES).filter(i => (i.structureType == STRUCTURE_CONTAINER ||
+      i.structureType == STRUCTURE_STORAGE) && 
+      i.store[RESOURCE_ENERGY] >= creepNeed);
+    if (target[0] != undefined) {
+      if (creep.withdraw(target[0], RESOURCE_ENERGY) == ERR_NOT_IN_RANGE) {
+        creep.moveTo(target[0]);
+      }
+    } else {
+      let source = Game.getObjectById(room.sources[0]);
+      if (creep.harvest(source) == ERR_NOT_IN_RANGE) {
+        creep.moveTo(source);
+      }
+    }
   }
+  return;
 }

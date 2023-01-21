@@ -1,19 +1,19 @@
 import { newCreepBody } from "@/NewCreep/NewCreepBodys";
-import { roleClaimer } from "@/Role/RoleClaimer";
+// import { roleClaimer } from "@/Role/RoleClaimer";
 
 export const claimTask = {
-  run: function(room: string) {
-    if (Game.rooms[room] != undefined && Game.rooms[room].controller.owner.username == 'LazyKitty') {
+  run: function(roomName: string, room: RoomMemory) {
+    if (Game.rooms[roomName] != undefined && Game.rooms[roomName].controller.owner.username == 'LazyKitty') {
       return;
     }
-    newClaimer();
+    newClaimer(room);
     for (let i = 0; i < Memory.roles.claimers.length; ++i) {
-      roleClaimer.run(Game.getObjectById(Memory.roles.claimers[i]), room);
+      // roleClaimer.run(Game.getObjectById(Memory.roles.claimers[i]), room);
     }
   }
 }
 
-function newClaimer() {
+function newClaimer(room: RoomMemory) {
   if (Game.spawns['Spawn1'].memory.shouldSpawn != null) {
     return;
   }
@@ -22,6 +22,6 @@ function newClaimer() {
   }
   Game.spawns['Spawn1'].memory.shouldSpawn = 'claimer';
   let newName = 'claimer' + Game.time;
-  Game.spawns['Spawn1'].spawnCreep(newCreepBody('claimer'), 
-    newName, {memory:{role: 'harvester'}});
+  Game.spawns['Spawn1'].spawnCreep(newCreepBody('claimer', room.spawns[0]), 
+    newName, {memory:{role: 'claimer'}});
 }

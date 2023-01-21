@@ -1,21 +1,30 @@
+// 在memory中储存各个角色的Id
 export const memoryRoles = {
   refresh: function(): void {
     let roles = returnIds();
     Memory.roles = {
       // Id<Creep>[]
       harvesters: roles.harvester,
-      transfers: roles.transfer,
+      carriers: roles.carrier,
       upgraders: roles.upgrader,
       builders: roles.builder,
-      repaiers: roles.repairer,
+      repairers: roles.repairer,
+      claimers: roles.claimer,
     }
   }
 }
 
-function returnIds() {
+function returnIds(): {
+  harvester: Id<Creep>[],
+  carrier: Id<Creep>[],
+  upgrader: Id<Creep>[],
+  builder: Id<Creep>[],
+  repairer: Id<Creep>[],
+  claimer: Id<Creep>[],
+} {
   let roles = {
     harvester: [],
-    transfer: [],
+    carrier: [],
     upgrader: [],
     builder: [],
     repairer: [],

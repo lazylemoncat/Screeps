@@ -1,11 +1,14 @@
+// 储存各个房间的相关信息
 export const memoryRoom = {
-  refresh: function() {
+  refresh: function(): void {
     Memory.rooms = {};
     for(let name in Game.rooms) {
       let structures = Game.rooms[name].find(FIND_STRUCTURES);
       Memory.rooms[name] = {
         // Id<Source>[]
         sources: Game.rooms[name].find(FIND_SOURCES).map(source => source.id),
+        // Id<StructureController>
+        controller: Game.rooms[name].controller.id,
         // Id<AnyStructure>[]
         structures: structures.map(structure => structure.id) as Id<AnyStructure>[],
         // Id<StructureSpawn>[]
@@ -16,6 +19,9 @@ export const memoryRoom = {
         // Id<StructureContainer>[]
         containers: structures.filter(structure => structure.structureType == STRUCTURE_CONTAINER).
           map(structure => structure.id) as Id<StructureContainer>[],
+        // Id<
+        towers: structures.filter(structure => structure.structureType == STRUCTURE_TOWER).
+          map(structure => structure.id) as Id<StructureTower>[],
         // Id<StructureStorage>
         storage: Game.rooms[name].storage ? Game.rooms[name].storage.id : null,
         // StructureLink[]
