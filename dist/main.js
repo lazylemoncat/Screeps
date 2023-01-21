@@ -1,5 +1,131 @@
 'use strict';
 
+const tasks = {
+    withdraw: [],
+    transfer: [],
+    returnTransfer: function (room) {
+        findTransferTask(room);
+        const structureType = ['spawn', 'extension', 'tower', 'container', 'storage',];
+        tasks.transfer.sort(function (a, b) {
+            let typea = structureType.indexOf(a.type);
+            let typeb = structureType.indexOf(b.type);
+            return typea - typeb;
+        });
+        return tasks.transfer;
+    },
+    returnWithdraw: function (room) {
+        findWithdraw(room);
+        const type = ['creep', 'link', 'container', 'storage',];
+        tasks.withdraw.sort(function (a, b) {
+            let typea = type.indexOf(a.type);
+            let typeb = type.indexOf(b.type);
+            return typea - typeb;
+        });
+        return tasks.withdraw;
+    },
+};
+function findWithdraw(room) {
+    withdrawTask('link', room);
+    withdrawTask('container', room);
+    withdrawTask('storage', room);
+    return;
+}
+function findTransferTask(room) {
+    transferTask$1('spawn', room);
+    transferTask$1('extension', room);
+    transferTask$1('tower', room);
+    transferTask$1('container', room);
+    transferTask$1('storage', room);
+    return;
+}
+function transferTask$1(type, room) {
+    let obj = {};
+    let targets = room.structures.filter(structure => Game.getObjectById(structure).structureType == type &&
+        Game.getObjectById(structure).store.getFreeCapacity(RESOURCE_ENERGY) > 0);
+    for (let i = 0; i < targets.length; ++i) {
+        let energy = Game.getObjectById(targets[i]).store.getFreeCapacity(RESOURCE_ENERGY);
+        obj = { type: type, id: targets[i], energy: energy };
+        if (!tasks.transfer.some(i => i.id == obj.id) &&
+            Game.getObjectById(targets[i]).pos.findInRange(FIND_SOURCES, 2).length == 0) {
+            tasks.transfer.push(obj);
+        }
+    }
+    return;
+}
+function withdrawTask(type, room) {
+    let obj = {};
+    switch (type) {
+        case 'link': {
+            let links = room.toLinks;
+            for (let i = 0; i < links.length; ++i) {
+                let link = Game.getObjectById(links[i]);
+                let energy = link.store[RESOURCE_ENERGY];
+                obj = { type: 'link', id: link.id, energy: energy };
+                if (energy > 100 && !tasks.withdraw.find(i => i.id == obj.id)) {
+                    tasks.withdraw.push(obj);
+                }
+            }
+            break;
+        }
+        case 'container': {
+            let containers = room.containers;
+            for (let i = 0; i < containers.length; ++i) {
+                if (Game.getObjectById(containers[i]).pos.findInRange(FIND_SOURCES, 1).length != 0) {
+                    let container = Game.getObjectById(containers[i]);
+                    let energy = container.store[RESOURCE_ENERGY];
+                    obj = { type: 'container', id: container.id, energy: energy };
+                    if (energy >= 50 && !tasks.withdraw.find(i => i.id == obj.id)) {
+                        tasks.withdraw.push(obj);
+                    }
+                }
+            }
+            break;
+        }
+        case 'storage': {
+            let storage = Game.getObjectById(room.storage);
+            if (storage != undefined) {
+                let energy = storage.store[RESOURCE_ENERGY];
+                obj = { type: 'storage', id: storage.id, energy: energy };
+                if (!tasks.withdraw.find(i => i.id == obj.id) && energy >= 50) {
+                    tasks.withdraw.push(obj);
+                }
+            }
+            break;
+        }
+    }
+    return;
+}
+
+global.helper = function (text) {
+    switch (text) {
+        case 'controller': {
+            for (let name in Memory.rooms) {
+                let room = Memory.rooms[name];
+                let controller = Game.getObjectById(room.controller);
+                let progress = controller.progress / controller.progressTotal;
+                console.log(name);
+                console.log(controller.level);
+                console.log('升级还需要', controller.progressTotal - controller.progress, progress);
+                console.log('可用安全模式次数为：', controller.safeModeAvailable);
+                console.log('-------------------------------------------------------');
+            }
+            break;
+        }
+        case 'tasks': {
+            console.log('withdrawTasks:');
+            for (let i = 0; i < tasks.withdraw.length; ++i) {
+                console.log(tasks.withdraw[i]);
+            }
+            console.log('transferTasks:');
+            for (let i = 0; i < tasks.transfer.length; ++i) {
+                console.log(tasks.transfer[i]);
+            }
+            console.log('-------------------------------------------------------');
+            break;
+        }
+    }
+};
+
 const memoryDelete = {
     // 删除死去的creep的memory
     deleteDead: function () {
@@ -264,102 +390,6 @@ const newCreepBody = function (role, spawn) {
     }
     return [];
 };
-
-const tasks = {
-    withdraw: [],
-    transfer: [],
-    returnTransfer: function (room) {
-        findTransferTask(room);
-        const structureType = ['spawn', 'extension', 'tower', 'container', 'storage',];
-        tasks.transfer.sort(function (a, b) {
-            let typea = structureType.indexOf(a.type);
-            let typeb = structureType.indexOf(b.type);
-            return typea - typeb;
-        });
-        return tasks.transfer;
-    },
-    returnWithdraw: function (room) {
-        findWithdraw(room);
-        const type = ['creep', 'link', 'container', 'storage',];
-        tasks.withdraw.sort(function (a, b) {
-            let typea = type.indexOf(a.type);
-            let typeb = type.indexOf(b.type);
-            return typea - typeb;
-        });
-        return tasks.withdraw;
-    },
-};
-function findWithdraw(room) {
-    withdrawTask('link', room);
-    withdrawTask('container', room);
-    withdrawTask('storage', room);
-    return;
-}
-function findTransferTask(room) {
-    transferTask$1('spawn', room);
-    transferTask$1('extension', room);
-    transferTask$1('tower', room);
-    transferTask$1('container', room);
-    transferTask$1('storage', room);
-    return;
-}
-function transferTask$1(type, room) {
-    let obj = {};
-    let targets = room.structures.filter(structure => Game.getObjectById(structure).structureType == type &&
-        Game.getObjectById(structure).store.getFreeCapacity(RESOURCE_ENERGY) > 0);
-    for (let i = 0; i < targets.length; ++i) {
-        let energy = Game.getObjectById(targets[i]).store.getFreeCapacity(RESOURCE_ENERGY);
-        obj = { type: type, id: targets[i], energy: energy };
-        if (!tasks.transfer.some(i => i.id == obj.id) &&
-            Game.getObjectById(targets[i]).pos.findInRange(FIND_SOURCES, 2).length == 0) {
-            tasks.transfer.push(obj);
-        }
-    }
-    return;
-}
-function withdrawTask(type, room) {
-    let obj = {};
-    switch (type) {
-        case 'link': {
-            let links = room.toLinks;
-            for (let i = 0; i < links.length; ++i) {
-                let link = Game.getObjectById(links[i]);
-                let energy = link.store[RESOURCE_ENERGY];
-                obj = { type: 'link', id: link.id, energy: energy };
-                if (energy > 100 && !tasks.withdraw.find(i => i.id == obj.id)) {
-                    tasks.withdraw.push(obj);
-                }
-            }
-            break;
-        }
-        case 'container': {
-            let containers = room.containers;
-            for (let i = 0; i < containers.length; ++i) {
-                if (Game.getObjectById(containers[i]).pos.findInRange(FIND_SOURCES, 1).length != 0) {
-                    let container = Game.getObjectById(containers[i]);
-                    let energy = container.store[RESOURCE_ENERGY];
-                    obj = { type: 'container', id: container.id, energy: energy };
-                    if (energy >= 50 && !tasks.withdraw.find(i => i.id == obj.id)) {
-                        tasks.withdraw.push(obj);
-                    }
-                }
-            }
-            break;
-        }
-        case 'storage': {
-            let storage = Game.getObjectById(room.storage);
-            if (storage != undefined) {
-                let energy = storage.store[RESOURCE_ENERGY];
-                obj = { type: 'storage', id: storage.id, energy: energy };
-                if (!tasks.withdraw.find(i => i.id == obj.id) && energy >= 50) {
-                    tasks.withdraw.push(obj);
-                }
-            }
-            break;
-        }
-    }
-    return;
-}
 
 const roleHarvester = {
     run: function (creep, room) {
@@ -949,7 +979,7 @@ const structureSpawn = {
     }
 };
 
-// MyMemory
+// helper
 memoryRefresh.refresh();
 const loop = function () {
     if (Game.cpu.bucket == 10000) {

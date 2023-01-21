@@ -1,3 +1,5 @@
+// helper
+import './helper/helper';
 // MyMemory
 import { memoryRefresh } from './MyMemory/MemoryRefresh';
 // Structure
