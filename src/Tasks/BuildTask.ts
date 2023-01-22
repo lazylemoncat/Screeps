@@ -30,7 +30,7 @@ function newBuilder(room: RoomMemory): void {
   }
   let builders = Memory.roles.builders;
   let sites = room.sites;
-  if (!(sites.length > 0 && builders.length < 3)) {
+  if (!(sites.length > 0 && builders.length < 2)) {
     return;
   }
   Game.spawns['Spawn1'].memory.shouldSpawn = 'builder';

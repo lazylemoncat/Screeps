@@ -25,7 +25,6 @@ function newUpgrader(room: RoomMemory): void {
   let flag = Game.flags.slowlyUpgrade;
   if (flag != undefined && flag.room == Game.getObjectById(room.controller).room) {
     upgradersNum = 1;
-    console.log('upgradersNum:', upgradersNum);
   }
   if (Game.getObjectById(room.controller).level == 8) {
     upgradersNum = 1;

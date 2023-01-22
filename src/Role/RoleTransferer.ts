@@ -12,6 +12,17 @@ export const roleTransferer = {
   // 从storage获取能量
   goWithdraw: function(creep: Creep, room: RoomMemory): void {
     let storage = Game.getObjectById(room.storage);
+    if (storage == null) {
+      return;
+    }
+    if (storage.store[RESOURCE_ENERGY] == 0) {
+      let links = room.links.map(i => Game.getObjectById(i)) as StructureLink[];
+      let link = storage.pos.findInRange(links, 1)[0];
+      if (creep.withdraw(link, RESOURCE_ENERGY) == ERR_NOT_IN_RANGE) {
+        creep.myMove(link);
+      }
+      return;
+    }
     if (creep.withdraw(storage, RESOURCE_ENERGY) == ERR_NOT_IN_RANGE) {
       creep.myMove(storage);
     }

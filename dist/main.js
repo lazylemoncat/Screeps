@@ -1,5 +1,19 @@
 'use strict';
 
+const upgradeFlag = {
+    find: function (name, roomMemory) {
+        let room = Game.getObjectById(roomMemory.controller).room;
+        let flags = room.find(FIND_FLAGS);
+        for (let i = 0; i < flags.length; ++i) {
+            switch (flags[i].name) {
+                case 'slowlyUpgrade': return 'slowlyUpgrade';
+                default: continue;
+            }
+        }
+        return null;
+    }
+};
+
 global.helper = function (text) {
     switch (text) {
         case 'controller': {
@@ -11,6 +25,7 @@ global.helper = function (text) {
                 console.log(controller.level);
                 console.log('升级还需要', controller.progressTotal - controller.progress);
                 console.log('已升级完成', progress + '%');
+                console.log('mode:', upgradeFlag.find('slowlyUpgrade', room));
                 console.log('可用安全模式次数为：', controller.safeModeAvailable);
                 console.log('-------------------------------------------------------');
             }
@@ -277,6 +292,8 @@ const newCreepBody = function (role, spawn) {
                 let bodys = [];
                 for (capacity /= 50; capacity >= 4; capacity -= 4) {
                     bodys.push(WORK, CARRY, MOVE);
+                    if (bodys.length == 12)
+                        break;
                 }
                 return bodys;
             }
@@ -334,6 +351,18 @@ const tasks = {
         });
         return tasks.withdraw;
     },
+    findTask: function (type, obj) {
+        if (type == 'transfer') {
+            let index = tasks.transfer.findIndex(i => i.id == obj.id);
+            if (index != -1) {
+                if (tasks.transfer[index].energy <= 0) {
+                    tasks.transfer.splice(index, 1);
+                }
+                return true;
+            }
+        }
+        return false;
+    }
 };
 function findWithdraw(room) {
     withdrawTask('link', room);
@@ -350,12 +379,13 @@ function findTransferTask(room) {
     return;
 }
 function transferTask$1(type, room) {
-    let obj = {};
-    let targets = room.structures.filter(structure => Game.getObjectById(structure).structureType == type &&
-        Game.getObjectById(structure).store.getFreeCapacity(RESOURCE_ENERGY) > 0);
+    let targets = room.structures.filter(structure => Game.getObjectById(structure).structureType == type);
     for (let i = 0; i < targets.length; ++i) {
-        let energy = Game.getObjectById(targets[i]).store.getFreeCapacity(RESOURCE_ENERGY);
-        obj = { type: type, id: targets[i], energy: energy };
+        let energy = Game.getObjectById(targets[i]).store.getFreeCapacity();
+        let obj = { type: type, id: targets[i], energy: energy };
+        if (tasks.findTask('transfer', obj)) {
+            continue;
+        }
         if (!tasks.transfer.some(i => i.id == obj.id) &&
             Game.getObjectById(targets[i]).pos.findInRange(FIND_SOURCES, 2).length == 0) {
             tasks.transfer.push(obj);
@@ -364,14 +394,13 @@ function transferTask$1(type, room) {
     return;
 }
 function withdrawTask(type, room) {
-    let obj = {};
     switch (type) {
         case 'link': {
             let links = room.toLinks;
             for (let i = 0; i < links.length; ++i) {
                 let link = Game.getObjectById(links[i]);
                 let energy = link.store[RESOURCE_ENERGY];
-                obj = { type: 'link', id: link.id, energy: energy };
+                let obj = { type: 'link', id: link.id, energy: energy };
                 if (energy > 100 && !tasks.withdraw.find(i => i.id == obj.id)) {
                     tasks.withdraw.push(obj);
                 }
@@ -384,7 +413,7 @@ function withdrawTask(type, room) {
                 if (Game.getObjectById(containers[i]).pos.findInRange(FIND_SOURCES, 1).length != 0) {
                     let container = Game.getObjectById(containers[i]);
                     let energy = container.store[RESOURCE_ENERGY];
-                    obj = { type: 'container', id: container.id, energy: energy };
+                    let obj = { type: 'container', id: container.id, energy: energy };
                     if (energy >= 50 && !tasks.withdraw.find(i => i.id == obj.id)) {
                         tasks.withdraw.push(obj);
                     }
@@ -396,7 +425,7 @@ function withdrawTask(type, room) {
             let storage = Game.getObjectById(room.storage);
             if (storage != undefined) {
                 let energy = storage.store[RESOURCE_ENERGY];
-                obj = { type: 'storage', id: storage.id, energy: energy };
+                let obj = { type: 'storage', id: storage.id, energy: energy };
                 if (!tasks.withdraw.find(i => i.id == obj.id) && energy >= 50) {
                     tasks.withdraw.push(obj);
                 }
@@ -543,6 +572,17 @@ const roleTransferer = {
     // 从storage获取能量
     goWithdraw: function (creep, room) {
         let storage = Game.getObjectById(room.storage);
+        if (storage == null) {
+            return;
+        }
+        if (storage.store[RESOURCE_ENERGY] == 0) {
+            let links = room.links.map(i => Game.getObjectById(i));
+            let link = storage.pos.findInRange(links, 1)[0];
+            if (creep.withdraw(link, RESOURCE_ENERGY) == ERR_NOT_IN_RANGE) {
+                creep.myMove(link);
+            }
+            return;
+        }
         if (creep.withdraw(storage, RESOURCE_ENERGY) == ERR_NOT_IN_RANGE) {
             creep.myMove(storage);
         }
@@ -642,6 +682,7 @@ const transferTask = {
         newTransferer(room);
         let withdrawTask = tasks.returnWithdraw(room);
         let transferTask = tasks.returnTransfer(room);
+        let transferIndex = 0;
         for (let i = 0; i < Memory.roles.transferers.length; ++i) {
             let transferer = Game.getObjectById(Memory.roles.transferers[i]);
             if (transferer == null) {
@@ -650,17 +691,18 @@ const transferTask = {
             }
             let isTransfering = roleTransferer.isTransfering(transferer);
             if (isTransfering) {
-                if (transferTask[0] == undefined || transferTask[0].id == room.storage) {
+                if (transferTask[transferIndex] == undefined || transferTask[transferIndex].id == room.storage) {
                     continue;
                 }
                 if (transferer.memory.carrierTarget != null) {
                     roleTransferer.goTransfer(transferer, transferer.memory.carrierTarget);
                     continue;
                 }
-                roleTransferer.goTransfer(transferer, transferTask[0].id);
-                transferTask[0].energy -= transferer.store[RESOURCE_ENERGY];
-                if (transferTask[0].energy <= 0) {
-                    transferTask.shift();
+                roleTransferer.goTransfer(transferer, transferTask[transferIndex].id);
+                transferTask[transferIndex].energy -= transferer.store[RESOURCE_ENERGY];
+                if (transferTask[transferIndex].energy <= 0) {
+                    // transferTask.shift();
+                    transferIndex++;
                 }
             }
             else {
@@ -684,13 +726,14 @@ const transferTask = {
                 continue;
             }
             if (isTransfering) {
-                if (transferTask[0] == undefined) {
+                if (transferTask[transferIndex] == undefined) {
                     continue;
                 }
-                roleCarrier.goTransfer(carrier, transferTask[0].id);
-                transferTask[0].energy -= carrier.store[RESOURCE_ENERGY];
-                if (transferTask[0].energy <= 0) {
-                    transferTask.shift();
+                roleCarrier.goTransfer(carrier, transferTask[transferIndex].id);
+                transferTask[transferIndex].energy -= carrier.store[RESOURCE_ENERGY];
+                if (transferTask[transferIndex].energy <= 0) {
+                    // transferTask.shift();
+                    transferIndex++;
                 }
             }
             else {
@@ -811,7 +854,6 @@ function newUpgrader(room) {
     let flag = Game.flags.slowlyUpgrade;
     if (flag != undefined && flag.room == Game.getObjectById(room.controller).room) {
         upgradersNum = 1;
-        console.log('upgradersNum:', upgradersNum);
     }
     if (Game.getObjectById(room.controller).level == 8) {
         upgradersNum = 1;
@@ -998,7 +1040,7 @@ function newBuilder(room) {
     }
     let builders = Memory.roles.builders;
     let sites = room.sites;
-    if (!(sites.length > 0 && builders.length < 3)) {
+    if (!(sites.length > 0 && builders.length < 2)) {
         return;
     }
     Game.spawns['Spawn1'].memory.shouldSpawn = 'builder';

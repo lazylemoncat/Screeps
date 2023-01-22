@@ -11,6 +11,7 @@ export const transferTask = {
 
     let withdrawTask: {type: string, id: Id<AnyStoreStructure>, energy: number}[] = tasks.returnWithdraw(room);
     let transferTask: {type: string, id: Id<AnyStoreStructure>, energy: number}[] = tasks.returnTransfer(room);
+    let transferIndex = 0;
     for (let i = 0; i < Memory.roles.transferers.length; ++i) {
       let transferer = Game.getObjectById(Memory.roles.transferers[i]);
       if (transferer == null) {
@@ -19,17 +20,18 @@ export const transferTask = {
       }
       let isTransfering: boolean = roleTransferer.isTransfering(transferer);
       if (isTransfering) {
-        if (transferTask[0] == undefined || transferTask[0].id == room.storage) {
+        if (transferTask[transferIndex] == undefined || transferTask[transferIndex].id == room.storage) {
           continue;
         }
         if (transferer.memory.carrierTarget != null) {
           roleTransferer.goTransfer(transferer, transferer.memory.carrierTarget as Id<AnyStoreStructure>);
           continue;
         }
-        roleTransferer.goTransfer(transferer, transferTask[0].id);
-        transferTask[0].energy -= transferer.store[RESOURCE_ENERGY];
-        if (transferTask[0].energy <= 0) {
-          transferTask.shift();
+        roleTransferer.goTransfer(transferer, transferTask[transferIndex].id);
+        transferTask[transferIndex].energy -= transferer.store[RESOURCE_ENERGY];
+        if (transferTask[transferIndex].energy <= 0) {
+          // transferTask.shift();
+          transferIndex++;
         }
       } else {
         roleTransferer.goWithdraw(transferer, room);
@@ -51,13 +53,14 @@ export const transferTask = {
         continue;
       }
       if (isTransfering) {
-        if (transferTask[0] == undefined) {
+        if (transferTask[transferIndex] == undefined) {
           continue;
         }
-        roleCarrier.goTransfer(carrier, transferTask[0].id);
-        transferTask[0].energy -= carrier.store[RESOURCE_ENERGY];
-        if (transferTask[0].energy <= 0) {
-          transferTask.shift();
+        roleCarrier.goTransfer(carrier, transferTask[transferIndex].id);
+        transferTask[transferIndex].energy -= carrier.store[RESOURCE_ENERGY];
+        if (transferTask[transferIndex].energy <= 0) {
+          // transferTask.shift();
+          transferIndex++;
         }
       } else {
         if (withdrawTask[0] == undefined) {

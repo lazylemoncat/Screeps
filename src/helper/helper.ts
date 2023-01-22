@@ -1,3 +1,4 @@
+import { upgradeFlag } from "@/Flags/UpgradeFlag";
 import { tasks } from "@/Tasks/Tasks";
 
 global.helper = function(text: string): string {
@@ -11,6 +12,7 @@ global.helper = function(text: string): string {
         console.log(controller.level);
         console.log('升级还需要', controller.progressTotal - controller.progress);
         console.log('已升级完成', progress + '%');
+        console.log('mode:', upgradeFlag.find('slowlyUpgrade', room));
         console.log('可用安全模式次数为：', controller.safeModeAvailable);
         console.log('-------------------------------------------------------');
       }

@@ -40,6 +40,7 @@ export const newCreepBody = function(role: String, spawn: Id<StructureSpawn>): B
         let bodys: BodyPartConstant[] = [];
         for (capacity /= 50; capacity >= 4; capacity -= 4) {
           bodys.push(WORK, CARRY, MOVE);
+          if (bodys.length == 12) break;
         }
         return bodys;
       }
