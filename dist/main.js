@@ -51,6 +51,9 @@ const memoryDelete = {
                 case 'harvester':
                     Memory.roles.harvesters.splice(index, 1);
                     break;
+                case 'miner':
+                    Memory.roles.miners.splice(index, 1);
+                    break;
                 case 'carrier':
                     Memory.roles.carriers.splice(index, 1);
                     break;
@@ -78,6 +81,7 @@ const memoryRoles = {
         Memory.roles = {
             // Id<Creep>[]
             harvesters: roles.harvester,
+            miners: roles.miner,
             carriers: roles.carrier,
             transferers: roles.transferer,
             upgraders: roles.upgrader,
@@ -90,6 +94,7 @@ const memoryRoles = {
 function returnIds() {
     let roles = {
         harvester: [],
+        miner: [],
         carrier: [],
         transferer: [],
         upgrader: [],
@@ -115,6 +120,8 @@ const memoryRoom = {
             Memory.rooms[name] = {
                 // Id<Source>[]
                 sources: Game.rooms[name].find(FIND_SOURCES).map(source => source.id),
+                // Id
+                mineral: Game.rooms[name].find(FIND_MINERALS)[0].id,
                 // Id<StructureController>
                 controller: Game.rooms[name].controller.id,
                 // Id<AnyStructure>[]
@@ -248,6 +255,36 @@ function runRepair(tower) {
     return;
 }
 
+const roleMiner = {
+    run: function (creep, room) {
+        if (creep.store.getFreeCapacity() < creep.getActiveBodyparts(WORK)) {
+            transferEnergy$1(creep, room);
+            return;
+        }
+        goHarvest$1(creep, room);
+        return;
+    },
+};
+function goHarvest$1(creep, room) {
+    let mineral = Game.getObjectById(room.mineral);
+    if (!creep.pos.isNearTo(mineral)) {
+        creep.myMove(mineral);
+        return;
+    }
+    creep.harvest(mineral);
+    return;
+}
+function transferEnergy$1(creep, room) {
+    let storage = Game.getObjectById(room.storage);
+    if (!creep.pos.isNearTo(storage)) {
+        creep.myMove(storage);
+        return;
+    }
+    let type = Object.keys(creep.store)[0];
+    creep.transfer(storage, type);
+    return;
+}
+
 // 返回孵化creep需要的部件数组
 const newCreepBody = function (role, spawn) {
     // MOVE 50,WORK 100,CARRY 50,ATTACK 80,RANGED_ATTACK 150,HEAL 250,CLAIM 600,TOUGH 10
@@ -264,10 +301,12 @@ const newCreepBody = function (role, spawn) {
     else {
         switch (role) {
             case 'harvester': {
-                let bodys = [CARRY];
-                for (capacity /= 50; capacity >= 5; capacity -= 5) {
+                let bodys = [CARRY, MOVE];
+                capacity /= 50;
+                capacity -= 2;
+                for (; capacity >= 5; capacity -= 5) {
                     bodys.push(WORK, WORK, MOVE);
-                    if (bodys.length >= 7) {
+                    if (bodys.length >= 8) {
                         if (capacity >= 2) {
                             bodys.push(WORK);
                         }
@@ -347,7 +386,15 @@ const tasks = {
         tasks.withdraw.sort(function (a, b) {
             let typea = type.indexOf(a.type);
             let typeb = type.indexOf(b.type);
-            return typea - typeb;
+            let res = typea - typeb;
+            if (res != 0) {
+                return res;
+            }
+            else {
+                let posa = Game.getObjectById(a.id).pos.y;
+                let posb = Game.getObjectById(b.id).pos.y;
+                return posa - posb;
+            }
         });
         return tasks.withdraw;
     },
@@ -362,7 +409,13 @@ const tasks = {
             }
         }
         return false;
-    }
+    },
+    output: function () {
+        for (let i = 0; i < tasks.transfer.length; ++i) {
+            console.log(tasks.transfer[i].type, tasks.transfer[i].id, tasks.transfer[i].energy);
+            console.log('....................');
+        }
+    },
 };
 function findWithdraw(room) {
     withdrawTask('link', room);
@@ -381,9 +434,12 @@ function findTransferTask(room) {
 function transferTask$1(type, room) {
     let targets = room.structures.filter(structure => Game.getObjectById(structure).structureType == type);
     for (let i = 0; i < targets.length; ++i) {
-        let energy = Game.getObjectById(targets[i]).store.getFreeCapacity();
+        let energy = Game.getObjectById(targets[i]).store.getFreeCapacity(RESOURCE_ENERGY);
         let obj = { type: type, id: targets[i], energy: energy };
         if (tasks.findTask('transfer', obj)) {
+            continue;
+        }
+        if (energy == 0) {
             continue;
         }
         if (!tasks.transfer.some(i => i.id == obj.id) &&
@@ -521,6 +577,14 @@ const harvestTask = {
             }
             roleHarvester.run(harvester, room);
         }
+        for (let i = 0; i < Memory.roles.miners.length; ++i) {
+            let miner = Game.getObjectById(Memory.roles.miners[i]);
+            if (miner == null) {
+                memoryDelete.delete(i, true, 'miner');
+                continue;
+            }
+            roleMiner.run(miner, room);
+        }
         return;
     }
 };
@@ -532,6 +596,19 @@ function newCreep(room) {
     if (harvesters.length <= carriers.length && harvesters.length < sources.length) {
         Game.spawns['Spawn1'].memory.shouldSpawn = 'harvester';
         newHarvester(harvesters, sources.length, room);
+    }
+    if (Game.spawns['Spawn1'].memory.shouldSpawn != null) {
+        return;
+    }
+    let miners = Memory.roles.miners;
+    if (miners.length < 1 && harvesters.length + carriers.length >= sources.length * 2) {
+        let extractor = Game.getObjectById(room.mineral).pos.findInRange(FIND_STRUCTURES, 0)[0];
+        if (extractor != null) {
+            Game.spawns['Spawn1'].memory.shouldSpawn = 'miner';
+            let newName = "Miner" + Game.time;
+            let bodys = newCreepBody('harvester', room.spawns[0]);
+            Game.spawns['Spawn1'].spawnCreep(bodys, newName, { memory: { role: 'miner' } });
+        }
     }
     return;
 }
@@ -1090,6 +1167,9 @@ const memoryAppend = {
             switch (role) {
                 case 'harvester':
                     Memory.roles.harvesters.push(creepId);
+                    break;
+                case 'miner':
+                    Memory.roles.miners.push(creepId);
                     break;
                 case 'carrier':
                     Memory.roles.carriers.push(creepId);

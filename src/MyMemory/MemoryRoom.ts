@@ -7,6 +7,8 @@ export const memoryRoom = {
       Memory.rooms[name] = {
         // Id<Source>[]
         sources: Game.rooms[name].find(FIND_SOURCES).map(source => source.id),
+        // Id
+        mineral: Game.rooms[name].find(FIND_MINERALS)[0].id,
         // Id<StructureController>
         controller: Game.rooms[name].controller.id,
         // Id<AnyStructure>[]

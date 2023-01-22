@@ -1,5 +1,6 @@
 interface RoomMemory {
   sources: Id<Source>[],
+  mineral: Id<Mineral>,
   controller: Id<StructureController>,
   structures: Id<AnyStructure>[],
   spawns: Id<StructureSpawn>[],

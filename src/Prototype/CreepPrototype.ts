@@ -1,4 +1,4 @@
-Creep.prototype.myMove = function(target: AnyStructure|Creep|Source|ConstructionSite) {
+Creep.prototype.myMove = function(target: AnyStructure|Creep|Source|ConstructionSite|Mineral) {
   if (this.memory.path == null || this.memory.path.id != target.id) {
     let path = this.pos.findPathTo(target);
     if (target.pos.x != path[path.length - 1].x && target.pos.y != path[path.length - 1].y) {

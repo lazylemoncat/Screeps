@@ -5,6 +5,7 @@ export const memoryRoles = {
     Memory.roles = {
       // Id<Creep>[]
       harvesters: roles.harvester,
+      miners: roles.miner,
       carriers: roles.carrier,
       transferers: roles.transferer,
       upgraders: roles.upgrader,
@@ -17,6 +18,7 @@ export const memoryRoles = {
 
 function returnIds(): {
   harvester: Id<Creep>[],
+  miner: Id<Creep>[],
   carrier: Id<Creep>[],
   transferer: Id<Creep>[],
   upgrader: Id<Creep>[],
@@ -26,6 +28,7 @@ function returnIds(): {
 } {
   let roles = {
     harvester: [],
+    miner: [],
     carrier: [],
     transferer: [],
     upgrader: [],

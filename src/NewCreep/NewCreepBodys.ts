@@ -13,10 +13,12 @@ export const newCreepBody = function(role: String, spawn: Id<StructureSpawn>): B
   } else {
     switch (role) {
       case 'harvester': {
-        let bodys: BodyPartConstant[] = [CARRY];
-        for (capacity /= 50; capacity >= 5; capacity -= 5) {
+        let bodys: BodyPartConstant[] = [CARRY, MOVE];
+        capacity /= 50;
+        capacity -= 2;
+        for (; capacity >= 5; capacity -= 5) {
           bodys.push(WORK, WORK, MOVE);
-          if (bodys.length >= 7) {
+          if (bodys.length >= 8) {
             if (capacity >= 2) {
               bodys.push(WORK);
             }

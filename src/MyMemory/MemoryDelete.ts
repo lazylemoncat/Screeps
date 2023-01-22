@@ -12,6 +12,7 @@ export const memoryDelete = {
     if (isCreep) {
         switch (role) {
           case 'harvester': Memory.roles.harvesters.splice(index, 1); break;
+          case 'miner': Memory.roles.miners.splice(index, 1); break;
           case 'carrier': Memory.roles.carriers.splice(index, 1); break;
           case 'transferer': Memory.roles.carriers.splice(index, 1); break;
           case 'builder': Memory.roles.builders.splice(index, 1); break;

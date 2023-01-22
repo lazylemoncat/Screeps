@@ -1,5 +1,6 @@
 import { memoryAppend } from "@/MyMemory/MemoryAppend";
 import { memoryDelete } from "@/MyMemory/MemoryDelete";
+import { roleMiner } from "@/Role/RoleMiner";
 import { newCreepBody } from "../NewCreep/NewCreepBodys";
 import { roleHarvester } from "../Role/RoleHarvester";
 
@@ -15,6 +16,14 @@ export const harvestTask = {
       }
       roleHarvester.run(harvester, room);
     }
+    for (let i = 0; i < Memory.roles.miners.length; ++i) {
+      let miner = Game.getObjectById(Memory.roles.miners[i]);
+      if (miner == null) {
+        memoryDelete.delete(i, true, 'miner');
+        continue;
+      }
+      roleMiner.run(miner, room);
+    }
     return;
   }
 }
@@ -27,6 +36,20 @@ function newCreep(room: RoomMemory): void {
   if (harvesters.length <= carriers.length && harvesters.length < sources.length) {
     Game.spawns['Spawn1'].memory.shouldSpawn = 'harvester';
     newHarvester(harvesters, sources.length, room);
+  }
+  
+  if (Game.spawns['Spawn1'].memory.shouldSpawn != null) {
+    return;
+  }
+  let miners = Memory.roles.miners;
+  if (miners.length < 1 && harvesters.length + carriers.length >= sources.length * 2) {
+    let extractor = Game.getObjectById(room.mineral).pos.findInRange(FIND_STRUCTURES, 0)[0];
+    if (extractor != null) {
+      Game.spawns['Spawn1'].memory.shouldSpawn = 'miner';
+      let newName: string = "Miner" + Game.time;
+      let bodys = newCreepBody('harvester', room.spawns[0]);
+      Game.spawns['Spawn1'].spawnCreep(bodys, newName, {memory: {role: 'miner'}});
+    }
   }
   return;
 }

@@ -19,7 +19,14 @@ export const tasks = {
     tasks.withdraw.sort(function (a,b) {
       let typea = type.indexOf(a.type);
       let typeb = type.indexOf(b.type);
-      return typea - typeb;
+      let res = typea - typeb;
+      if (res != 0) {
+        return res;
+      } else {
+        let posa = (Game.getObjectById(a.id) as AnyStructure).pos.y;
+        let posb = (Game.getObjectById(b.id) as AnyStructure).pos.y;
+        return posa - posb;
+      }
     });
     return tasks.withdraw;
   },
@@ -35,7 +42,14 @@ export const tasks = {
       }
     }
     return false;
-  }
+  },
+
+  output: function() {
+    for (let i = 0; i < tasks.transfer.length; ++i) {
+      console.log(tasks.transfer[i].type,tasks.transfer[i].id,tasks.transfer[i].energy);
+      console.log('....................');
+    }
+  },
 }
 
 function findWithdraw(room: RoomMemory): void {
@@ -58,9 +72,12 @@ function transferTask(type: string, room: RoomMemory): void {
   let targets:Id<AnyStoreStructure>[] = (room.structures as Id<AnyStoreStructure>[]).filter(structure => 
     Game.getObjectById(structure).structureType == type);
   for (let i = 0; i < targets.length; ++i) {
-    let energy = Game.getObjectById(targets[i]).store.getFreeCapacity();
+    let energy = Game.getObjectById(targets[i]).store.getFreeCapacity(RESOURCE_ENERGY);
     let obj = {type: type, id: targets[i], energy: energy};
     if (tasks.findTask('transfer', obj)) {
+      continue;
+    }
+    if (energy == 0) {
       continue;
     }
     if (!tasks.transfer.some(i => i.id == obj.id) && 

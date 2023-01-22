@@ -2,6 +2,7 @@ interface Memory {
   roles: {
     // Creep[]
     harvesters?: Id<Creep>[],
+    miners?: Id<Creep>[],
     carriers?: Id<Creep>[],
     transferers?: Id<Creep>[],
     upgraders?: Id<Creep>[],

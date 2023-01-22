@@ -1,3 +1,3 @@
 interface Creep {
-  myMove(target: AnyStructure|Creep|Source|ConstructionSite): void,
+  myMove(target: AnyStructure|Creep|Source|ConstructionSite|Mineral): void,
 }
