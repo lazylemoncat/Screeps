@@ -17,7 +17,7 @@ export const roleUpgrader = {
 
 function goUpgrade(creep: Creep): void {
   if(creep.upgradeController(creep.room.controller) == ERR_NOT_IN_RANGE) {
-    creep.moveTo(creep.room.controller);
+    creep.myMove(creep.room.controller);
   }
   return;
 }
@@ -29,7 +29,7 @@ function goGetEnergy(creep: Creep, room: RoomMemory): void {
   let container = controller.pos.findInRange(containers, 2)[0];
   if (container != undefined && container.store[RESOURCE_ENERGY] >= creepNeed) {
     if (creep.withdraw(container, RESOURCE_ENERGY) == ERR_NOT_IN_RANGE) {
-      creep.moveTo(container);
+      creep.myMove(container);
     }
     return;
   } else {
@@ -38,12 +38,12 @@ function goGetEnergy(creep: Creep, room: RoomMemory): void {
       i.store[RESOURCE_ENERGY] >= creepNeed);
     if (target[0] != undefined) {
       if (creep.withdraw(target[0], RESOURCE_ENERGY) == ERR_NOT_IN_RANGE) {
-        creep.moveTo(target[0]);
+        creep.myMove(target[0]);
       }
     } else {
       let source = Game.getObjectById(room.sources[0]);
       if (creep.harvest(source) == ERR_NOT_IN_RANGE) {
-        creep.moveTo(source);
+        creep.myMove(source);
       }
     }
   }

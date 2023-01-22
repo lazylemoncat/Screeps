@@ -2,6 +2,8 @@
 import './helper/helper';
 // MyMemory
 import { memoryRefresh } from './MyMemory/MemoryRefresh';
+// Prototype
+import './Prototype/CreepPrototype';
 // Structure
 import { structureLink } from './Structure/StructureLink';
 import { structureTower } from './Structure/StructureTower';
@@ -11,7 +13,7 @@ import { transferTask } from './Tasks/TransferTask';
 import { upgradeTask } from './Tasks/UpgradeTask';
 import { buildTask } from './Tasks/BuildTask';
 import { repairTask } from './Tasks/RepairTask';
-import { claimTask } from './Tasks/ClaimTask';
+// import { claimTask } from './Tasks/ClaimTask';
 import { structureSpawn } from './Structure/StructureSpawn';
 
 memoryRefresh.refresh();

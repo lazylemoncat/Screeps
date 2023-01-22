@@ -19,7 +19,7 @@ function goBuild(creep: Creep, room: RoomMemory): void {
   let target: ConstructionSite = Game.getObjectById(sites[0]);
   if(target) {
     if(creep.build(target) == ERR_NOT_IN_RANGE) {
-      creep.moveTo(target, {visualizePathStyle: {stroke: '#ffffff'}});
+      creep.myMove(target);
     }
   }
   return;
@@ -41,7 +41,7 @@ function goGetEnergy(creep: Creep, room: RoomMemory): void {
     if (targetStore == null) {
       let sources: Source = Game.getObjectById(room.sources[0]);
       if (creep.harvest(sources) == ERR_NOT_IN_RANGE) {
-        creep.moveTo(sources);
+        creep.myMove(sources);
       }
       return;
     }

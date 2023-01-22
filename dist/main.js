@@ -39,6 +39,9 @@ const memoryDelete = {
                 case 'carrier':
                     Memory.roles.carriers.splice(index, 1);
                     break;
+                case 'transferer':
+                    Memory.roles.carriers.splice(index, 1);
+                    break;
                 case 'builder':
                     Memory.roles.builders.splice(index, 1);
                     break;
@@ -61,6 +64,7 @@ const memoryRoles = {
             // Id<Creep>[]
             harvesters: roles.harvester,
             carriers: roles.carrier,
+            transferers: roles.transferer,
             upgraders: roles.upgrader,
             builders: roles.builder,
             repairers: roles.repairer,
@@ -72,6 +76,7 @@ function returnIds() {
     let roles = {
         harvester: [],
         carrier: [],
+        transferer: [],
         upgrader: [],
         builder: [],
         repairer: [],
@@ -149,6 +154,29 @@ const memoryRefresh = {
         memoryDelete.deleteDead();
         memoryRoles.refresh();
     }
+};
+
+Creep.prototype.myMove = function (target) {
+    if (this.memory.path == null || this.memory.path.id != target.id) {
+        let path = this.pos.findPathTo(target);
+        if (target.pos.x != path[path.length - 1].x && target.pos.y != path[path.length - 1].y) {
+            return;
+        }
+        this.memory.path = { path: Room.serializePath(path), id: target.id, lastPos: [this.pos.x, this.pos.y] };
+        this.moveByPath(path);
+    }
+    else {
+        let res = this.moveByPath(Room.deserializePath(this.memory.path.path));
+        if (res != OK || this.pos.x == this.memory.path.lastPos[0] &&
+            this.pos.y == this.memory.path.lastPos[1]) {
+            let path = this.pos.findPathTo(target);
+            this.memory.path.path = Room.serializePath(path);
+            this.memory.path.id = target.id;
+            this.moveByPath(path);
+        }
+        this.memory.path.lastPos = [this.pos.x, this.pos.y];
+    }
+    return;
 };
 
 const structureLink = {
@@ -249,8 +277,6 @@ const newCreepBody = function (role, spawn) {
                 let bodys = [];
                 for (capacity /= 50; capacity >= 4; capacity -= 4) {
                     bodys.push(WORK, CARRY, MOVE);
-                    if (bodys.length == 9)
-                        break;
                 }
                 return bodys;
             }
@@ -394,7 +420,7 @@ const roleHarvester = {
 function goHarvest(creep, transfered, room) {
     let source = Game.getObjectById(creep.memory.sourcesPosition);
     if (!creep.pos.isNearTo(source)) {
-        creep.moveTo(source);
+        creep.myMove(source);
         return;
     }
     if (source.energy == 0 ||
@@ -405,7 +431,7 @@ function goHarvest(creep, transfered, room) {
     let container = creep.pos.findInRange(containers, 1)[0];
     if (container != undefined) {
         if (!creep.pos.isEqualTo(container)) {
-            creep.moveTo(container);
+            creep.myMove(container);
         }
     }
     creep.harvest(source);
@@ -503,6 +529,47 @@ function newHarvester(harvesters, sourcesLength, room) {
     return;
 }
 
+const roleTransferer = {
+    // 判断接收withdraw任务还是transfer任务
+    isTransfering: function (creep) {
+        if (creep.memory.transfering && creep.store[RESOURCE_ENERGY] == 0) {
+            creep.memory.transfering = false;
+        }
+        if (!creep.memory.transfering && creep.store.getFreeCapacity() == 0) {
+            creep.memory.transfering = true;
+        }
+        return creep.memory.transfering;
+    },
+    // 从storage获取能量
+    goWithdraw: function (creep, room) {
+        let storage = Game.getObjectById(room.storage);
+        if (creep.withdraw(storage, RESOURCE_ENERGY) == ERR_NOT_IN_RANGE) {
+            creep.myMove(storage);
+        }
+        return;
+    },
+    // 运输能量
+    goTransfer: function (creep, task) {
+        creep.memory.carrierTarget = task;
+        let target = Game.getObjectById(task);
+        if (target == null || target.store.getFreeCapacity(RESOURCE_ENERGY) == 0) {
+            creep.memory.carrierTarget = null;
+            return;
+        }
+        let res = 0;
+        res = creep.transfer(target, RESOURCE_ENERGY);
+        switch (res) {
+            case OK:
+                creep.memory.carrierTarget = null;
+                break;
+            case ERR_NOT_IN_RANGE:
+                creep.myMove(target);
+                break;
+        }
+        return;
+    }
+};
+
 const roleCarrier = {
     // 判断接收withdraw任务还是transfer任务
     isTransfering: function (creep) {
@@ -528,7 +595,7 @@ const roleCarrier = {
                 creep.memory.carrierTarget = null;
                 break;
             case ERR_NOT_IN_RANGE:
-                creep.moveTo(target);
+                creep.myMove(target);
                 break;
         }
         return;
@@ -550,7 +617,7 @@ const roleCarrier = {
                     target.memory.waiting = null;
                     break;
                 case ERR_NOT_IN_RANGE:
-                    creep.moveTo(target);
+                    creep.myMove(target);
                     break;
             }
         }
@@ -561,7 +628,7 @@ const roleCarrier = {
                     creep.memory.carrierTarget = null;
                     break;
                 case ERR_NOT_IN_RANGE:
-                    creep.moveTo(target);
+                    creep.myMove(target);
                     break;
             }
         }
@@ -572,8 +639,34 @@ const roleCarrier = {
 const transferTask = {
     run: function (room) {
         newCarrier(room);
+        newTransferer(room);
         let withdrawTask = tasks.returnWithdraw(room);
         let transferTask = tasks.returnTransfer(room);
+        for (let i = 0; i < Memory.roles.transferers.length; ++i) {
+            let transferer = Game.getObjectById(Memory.roles.transferers[i]);
+            if (transferer == null) {
+                memoryDelete.delete(i, true, 'transferer');
+                continue;
+            }
+            let isTransfering = roleTransferer.isTransfering(transferer);
+            if (isTransfering) {
+                if (transferTask[0] == undefined || transferTask[0].id == room.storage) {
+                    continue;
+                }
+                if (transferer.memory.carrierTarget != null) {
+                    roleTransferer.goTransfer(transferer, transferer.memory.carrierTarget);
+                    continue;
+                }
+                roleTransferer.goTransfer(transferer, transferTask[0].id);
+                transferTask[0].energy -= transferer.store[RESOURCE_ENERGY];
+                if (transferTask[0].energy <= 0) {
+                    transferTask.shift();
+                }
+            }
+            else {
+                roleTransferer.goWithdraw(transferer, room);
+            }
+        }
         for (let i = 0; i < Memory.roles.carriers.length; ++i) {
             let carrier = Game.getObjectById(Memory.roles.carriers[i]);
             if (carrier == null) {
@@ -630,6 +723,19 @@ function newCarrier(room) {
     if (Game.spawns['Spawn1'].spawnCreep(bodys, newName, { memory: { role: 'carrier', } }) == OK) ;
     return;
 }
+function newTransferer(room) {
+    if (Game.spawns['Spawn1'].memory.shouldSpawn != null) {
+        return;
+    }
+    if (Game.getObjectById(room.storage) == null || Memory.roles.transferers.length > 0) {
+        return;
+    }
+    Game.spawns['Spawn1'].memory.shouldSpawn = 'transferer';
+    let newName = 'Transferer' + Game.time;
+    let bodys = newCreepBody('carrier', room.spawns[0]);
+    Game.spawns['Spawn1'].spawnCreep(bodys, newName, { memory: { role: 'transferer', } });
+    return;
+}
 
 const roleUpgrader = {
     run: function (creep, room) {
@@ -649,7 +755,7 @@ const roleUpgrader = {
 };
 function goUpgrade(creep) {
     if (creep.upgradeController(creep.room.controller) == ERR_NOT_IN_RANGE) {
-        creep.moveTo(creep.room.controller);
+        creep.myMove(creep.room.controller);
     }
     return;
 }
@@ -660,7 +766,7 @@ function goGetEnergy$2(creep, room) {
     let container = controller.pos.findInRange(containers, 2)[0];
     if (container != undefined && container.store[RESOURCE_ENERGY] >= creepNeed) {
         if (creep.withdraw(container, RESOURCE_ENERGY) == ERR_NOT_IN_RANGE) {
-            creep.moveTo(container);
+            creep.myMove(container);
         }
         return;
     }
@@ -670,13 +776,13 @@ function goGetEnergy$2(creep, room) {
             i.store[RESOURCE_ENERGY] >= creepNeed);
         if (target[0] != undefined) {
             if (creep.withdraw(target[0], RESOURCE_ENERGY) == ERR_NOT_IN_RANGE) {
-                creep.moveTo(target[0]);
+                creep.myMove(target[0]);
             }
         }
         else {
             let source = Game.getObjectById(room.sources[0]);
             if (creep.harvest(source) == ERR_NOT_IN_RANGE) {
-                creep.moveTo(source);
+                creep.myMove(source);
             }
         }
     }
@@ -702,6 +808,11 @@ function newUpgrader(room) {
         return;
     }
     let upgradersNum = room.sites.length > 0 ? 1 : 3;
+    let flag = Game.flags.slowlyUpgrade;
+    if (flag != undefined && flag.room == Game.getObjectById(room.controller).room) {
+        upgradersNum = 1;
+        console.log('upgradersNum:', upgradersNum);
+    }
     if (Game.getObjectById(room.controller).level == 8) {
         upgradersNum = 1;
     }
@@ -736,7 +847,7 @@ function goBuild(creep, room) {
     let target = Game.getObjectById(sites[0]);
     if (target) {
         if (creep.build(target) == ERR_NOT_IN_RANGE) {
-            creep.moveTo(target, { visualizePathStyle: { stroke: '#ffffff' } });
+            creep.myMove(target);
         }
     }
     return;
@@ -757,7 +868,7 @@ function goGetEnergy$1(creep, room) {
         if (targetStore == null) {
             let sources = Game.getObjectById(room.sources[0]);
             if (creep.harvest(sources) == ERR_NOT_IN_RANGE) {
-                creep.moveTo(sources);
+                creep.myMove(sources);
             }
             return;
         }
@@ -803,7 +914,7 @@ function goRepair(creep, room) {
     let repairTarget = Game.getObjectById(creep.memory.repairtarget);
     if (repairTarget != null && repairTarget.hits < repairTarget.hitsMax) {
         if (creep.repair(repairTarget) == ERR_NOT_IN_RANGE) {
-            creep.moveTo(repairTarget);
+            creep.myMove(repairTarget);
         }
         return;
     }
@@ -818,7 +929,7 @@ function goRepair(creep, room) {
     }
     creep.memory.repairtarget = targetTo[0].id;
     if (creep.repair(targetTo[0]) == ERR_NOT_IN_RANGE) {
-        creep.moveTo(targetTo[0]);
+        creep.myMove(targetTo[0]);
     }
     return;
 }
@@ -838,7 +949,7 @@ function goGetEnergy(creep, room) {
         if (targetStore == null) {
             let sources = Game.getObjectById(room.sources[0]);
             if (creep.harvest(sources[0]) == ERR_NOT_IN_RANGE) {
-                creep.moveTo(sources[0]);
+                creep.myMove(sources[0]);
             }
             return;
         }
@@ -853,7 +964,7 @@ function goGetEnergy(creep, room) {
     let res = creep.withdraw(target, RESOURCE_ENERGY);
     switch (res) {
         case ERR_NOT_IN_RANGE:
-            creep.moveTo(target);
+            creep.myMove(target);
             break;
         case OK:
             creep.memory.carrierTarget = null;

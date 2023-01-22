@@ -20,7 +20,7 @@ function goRepair(creep: Creep, room: RoomMemory): void {
   let repairTarget = Game.getObjectById(creep.memory.repairtarget);
   if (repairTarget != null && repairTarget.hits < repairTarget.hitsMax) {
     if (creep.repair(repairTarget) == ERR_NOT_IN_RANGE) {
-      creep.moveTo(repairTarget);
+      creep.myMove(repairTarget);
     }
     return;
   }
@@ -35,7 +35,7 @@ function goRepair(creep: Creep, room: RoomMemory): void {
   }
   creep.memory.repairtarget = targetTo[0].id;
   if (creep.repair(targetTo[0]) == ERR_NOT_IN_RANGE) {
-    creep.moveTo(targetTo[0]);
+    creep.myMove(targetTo[0]);
   }
   return;
 }
@@ -56,7 +56,7 @@ function goGetEnergy(creep: Creep, room: RoomMemory): void {
     if (targetStore == null) {
       let sources: Source = Game.getObjectById(room.sources[0]);
       if (creep.harvest(sources[0]) == ERR_NOT_IN_RANGE) {
-        creep.moveTo(sources[0]);
+        creep.myMove(sources[0]);
       }
       return;
     }
@@ -71,7 +71,7 @@ function goGetEnergy(creep: Creep, room: RoomMemory): void {
   }
   let res = creep.withdraw(target, RESOURCE_ENERGY);
   switch (res) {
-    case ERR_NOT_IN_RANGE: creep.moveTo(target); break;
+    case ERR_NOT_IN_RANGE: creep.myMove(target); break;
     case OK: creep.memory.carrierTarget = null; break;
   }
   return;

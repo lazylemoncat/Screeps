@@ -14,7 +14,7 @@ export const roleHarvester = {
 function goHarvest(creep: Creep, transfered: boolean, room: RoomMemory): void {
   let source: Source = Game.getObjectById(creep.memory.sourcesPosition);
   if (!creep.pos.isNearTo(source)) {
-    creep.moveTo(source);
+    creep.myMove(source);
     return;
   }
   if (source.energy == 0 || 
@@ -26,7 +26,7 @@ function goHarvest(creep: Creep, transfered: boolean, room: RoomMemory): void {
   let container = creep.pos.findInRange(containers, 1)[0];
   if (container != undefined) {
     if (!creep.pos.isEqualTo(container)) {
-      creep.moveTo(container);
+      creep.myMove(container);
     }
   }
   creep.harvest(source);

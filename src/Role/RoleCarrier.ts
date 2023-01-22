@@ -23,7 +23,7 @@ export const roleCarrier = {
     res = creep.transfer(target, RESOURCE_ENERGY);
     switch (res) {
       case OK: creep.memory.carrierTarget = null; break;
-      case ERR_NOT_IN_RANGE: creep.moveTo(target); break;
+      case ERR_NOT_IN_RANGE: creep.myMove(target); break;
     }
     return;
   },
@@ -41,13 +41,13 @@ export const roleCarrier = {
       target.memory.waiting = creep.id;
       switch (res) {
         case OK: creep.memory.carrierTarget = null; target.memory.waiting = null; break;
-        case ERR_NOT_IN_RANGE: creep.moveTo(target); break;
+        case ERR_NOT_IN_RANGE: creep.myMove(target); break;
       }
     } else {
       res = creep.withdraw(target, RESOURCE_ENERGY);
       switch (res) {
         case OK: creep.memory.carrierTarget = null; break;
-        case ERR_NOT_IN_RANGE: creep.moveTo(target); break;
+        case ERR_NOT_IN_RANGE: creep.myMove(target); break;
       }
     }  
     return;
