@@ -9,12 +9,16 @@ import { structureLink } from './Structure/StructureLink';
 import { structureTower } from './Structure/StructureTower';
 // tasks
 import { harvestTask } from './Tasks/HarvestTask';
+import { outerTask } from './Tasks/OuterTask';
 import { transferTask } from './Tasks/TransferTask';
 import { upgradeTask } from './Tasks/UpgradeTask';
 import { buildTask } from './Tasks/BuildTask';
 import { repairTask } from './Tasks/RepairTask';
 // import { claimTask } from './Tasks/ClaimTask';
 import { structureSpawn } from './Structure/StructureSpawn';
+import { memoryDelete } from './MyMemory/MemoryDelete';
+import { roleAttacker } from './Role/RoleAttacker';
+
 
 memoryRefresh.refresh();
 export const loop = function (): void {
@@ -34,7 +38,16 @@ export const loop = function (): void {
     buildTask.run(room);
     upgradeTask.run(room);
     repairTask.run(room);
+    outerTask.run();
     //claimTask.run('W59S26');
+    // todo
+    // for (let i = 0; i < Memory.roles.attackers.length; ++i) {
+    //   let attacker =Game.getObjectById(Memory.roles.attackers[i]);
+    //   if (attacker == null) {
+    //     memoryDelete.delete(i, true, 'attacker');
+    //   }
+    //   roleAttacker.run(attacker, 'W58S25');
+    // }
     // 执行建筑的run函数
     for (let name in Game.structures) {
       let structure = Game.structures[name];

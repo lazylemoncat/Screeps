@@ -18,6 +18,8 @@ export const memoryDelete = {
           case 'builder': Memory.roles.builders.splice(index, 1); break;
           case 'upgrader': Memory.roles.upgraders.splice(index, 1); break;
           case 'repairer': Memory.roles.repairers.splice(index, 1); break;
+          case 'claimer': Memory.roles.claimers.splice(index, 1); break;
+          case 'attacker': Memory.roles.attackers.splice(index, 1); break;
         }
     } else {
       ;

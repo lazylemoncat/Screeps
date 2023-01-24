@@ -1,7 +1,14 @@
 interface Memory {
+  Outer: {
+    roomName: string,
+    isInit: boolean,
+    sources: Id<Source>[],
+    harvestersNum: number;
+  }[],
   roles: {
     // Creep[]
     harvesters?: Id<Creep>[],
+    outer_harvesters?: Id<Creep>[],
     miners?: Id<Creep>[],
     carriers?: Id<Creep>[],
     transferers?: Id<Creep>[],
@@ -9,9 +16,11 @@ interface Memory {
     builders?: Id<Creep>[],
     repairers?: Id<Creep>[],
     claimers?: Id<Creep>[],
+    attackers?: Id<Creep>[],
   },
 }
 interface CreepMemory {
+  roomName?: string,
   path?: {path: string, id: _HasId, lastPos: [number, number]},
   waiting?: Id<Creep>,
   role?: string,

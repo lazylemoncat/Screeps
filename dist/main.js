@@ -69,6 +69,12 @@ const memoryDelete = {
                 case 'repairer':
                     Memory.roles.repairers.splice(index, 1);
                     break;
+                case 'claimer':
+                    Memory.roles.claimers.splice(index, 1);
+                    break;
+                case 'attacker':
+                    Memory.roles.attackers.splice(index, 1);
+                    break;
             }
         }
     }
@@ -81,6 +87,7 @@ const memoryRoles = {
         Memory.roles = {
             // Id<Creep>[]
             harvesters: roles.harvester,
+            outer_harvesters: roles.outer_harvester,
             miners: roles.miner,
             carriers: roles.carrier,
             transferers: roles.transferer,
@@ -88,12 +95,14 @@ const memoryRoles = {
             builders: roles.builder,
             repairers: roles.repairer,
             claimers: roles.claimer,
+            attackers: roles.attacker,
         };
     }
 };
 function returnIds() {
     let roles = {
         harvester: [],
+        outer_harvester: [],
         miner: [],
         carrier: [],
         transferer: [],
@@ -101,6 +110,7 @@ function returnIds() {
         builder: [],
         repairer: [],
         claimer: [],
+        attacker: [],
     };
     for (let name in Game.creeps) {
         let creep = Game.creeps[name];
@@ -116,6 +126,9 @@ const memoryRoom = {
     refresh: function () {
         Memory.rooms = {};
         for (let name in Game.rooms) {
+            if (Game.rooms[name].controller.owner.username != 'LazyKitty') {
+                continue;
+            }
             let structures = Game.rooms[name].find(FIND_STRUCTURES);
             Memory.rooms[name] = {
                 // Id<Source>[]
@@ -179,6 +192,7 @@ const memoryRefresh = {
 };
 
 Creep.prototype.myMove = function (target) {
+    // 初次寻找路线
     if (this.memory.path == null || this.memory.path.id != target.id) {
         let path = this.pos.findPathTo(target);
         if (target.pos.x != path[path.length - 1].x && target.pos.y != path[path.length - 1].y) {
@@ -188,10 +202,25 @@ Creep.prototype.myMove = function (target) {
         this.moveByPath(path);
     }
     else {
-        let res = this.moveByPath(Room.deserializePath(this.memory.path.path));
-        if (res != OK || this.pos.x == this.memory.path.lastPos[0] &&
-            this.pos.y == this.memory.path.lastPos[1]) {
-            let path = this.pos.findPathTo(target);
+        let path = Room.deserializePath(this.memory.path.path);
+        let res = this.moveByPath(path);
+        if (res != OK || this.pos.x == this.memory.path.lastPos[0] && this.pos.y == this.memory.path.lastPos[1]) {
+            let idx = path.findIndex(i => i.x == this.pos.x && i.y == this.pos.y);
+            // 简单的对穿
+            if (idx !== -1) {
+                idx++;
+                let pos = new RoomPosition(path[idx].x, path[idx].y, this.room.name);
+                let target = pos.lookFor(LOOK_CREEPS)[0];
+                let roles = ['carrier', 'transferer', 'upgrader'];
+                if (target != undefined && roles.find(i => target.memory.role == i) != undefined) {
+                    this.move(this.pos.getDirectionTo(pos));
+                    target.move(target.pos.getDirectionTo(this));
+                    this.memory.path.lastPos = [this.pos.x, this.pos.y];
+                    return;
+                }
+            }
+            // 重新寻找路线
+            path = this.pos.findPathTo(target);
             this.memory.path.path = Room.serializePath(path);
             this.memory.path.id = target.id;
             this.moveByPath(path);
@@ -340,7 +369,7 @@ const newCreepBody = function (role, spawn) {
                 let bodys = [];
                 for (capacity /= 50; capacity >= 2; capacity -= 2) {
                     bodys.push(MOVE, CARRY);
-                    if (bodys.length == 30)
+                    if (bodys.length == 20)
                         break;
                 }
                 return bodys;
@@ -409,12 +438,6 @@ const tasks = {
             }
         }
         return false;
-    },
-    output: function () {
-        for (let i = 0; i < tasks.transfer.length; ++i) {
-            console.log(tasks.transfer[i].type, tasks.transfer[i].id, tasks.transfer[i].energy);
-            console.log('....................');
-        }
     },
 };
 function findWithdraw(room) {
@@ -632,6 +655,43 @@ function newHarvester(harvesters, sourcesLength, room) {
     let memory = { role: 'harvester', sourcesPosition: sourceId };
     let bodys = newCreepBody('harvester', room.spawns[0]);
     if (Game.spawns['Spawn1'].spawnCreep(bodys, newName, { memory: memory }) == OK) ;
+    return;
+}
+
+const outerTask = {
+    run: function () {
+        for (let i = 0; i < Memory.Outer.length; ++i) {
+            let room = Memory.Outer[i];
+            if (Game.flags.outer == undefined) {
+                let flag = Game.flags[Game.spawns.Spawn1.pos.createFlag('outer')];
+                flag.setPosition(new RoomPosition(25, 25, room.roomName));
+                flag.remove();
+            }
+            if (room.isInit != true) {
+                initRoom(i);
+            }
+            //newCreep(i);
+        }
+        for (let i = 0; i < Memory.roles.outer_harvesters.length; i++) {
+            let harvester = Game.getObjectById(Memory.roles.outer_harvesters[i]);
+            if (harvester == null) {
+                memoryDelete.delete(i, true, 'outer_harvester');
+                continue;
+            }
+        }
+    }
+};
+function initRoom(roomIndex) {
+    let room = Memory.Outer[roomIndex];
+    room.harvestersNum = 0;
+    if (Game.rooms[room.roomName] == undefined) {
+        return;
+    }
+    let sources = Game.rooms[room.roomName].find(FIND_SOURCES);
+    for (let i = 0; i < sources.length; i++) {
+        room.sources.push(sources[i].id);
+    }
+    room.isInit = true;
     return;
 }
 
@@ -1168,6 +1228,9 @@ const memoryAppend = {
                 case 'harvester':
                     Memory.roles.harvesters.push(creepId);
                     break;
+                case 'Outer_harvester':
+                    Memory.roles.outer_harvesters.push(creepId);
+                    break;
                 case 'miner':
                     Memory.roles.miners.push(creepId);
                     break;
@@ -1182,6 +1245,9 @@ const memoryAppend = {
                     break;
                 case 'repairer':
                     Memory.roles.repairers.push(creepId);
+                    break;
+                case 'attacker':
+                    Memory.roles.attackers.push(creepId);
                     break;
             }
         }
@@ -1221,7 +1287,16 @@ const loop = function () {
         buildTask.run(room);
         upgradeTask.run(room);
         repairTask.run(room);
+        outerTask.run();
         //claimTask.run('W59S26');
+        // todo
+        // for (let i = 0; i < Memory.roles.attackers.length; ++i) {
+        //   let attacker =Game.getObjectById(Memory.roles.attackers[i]);
+        //   if (attacker == null) {
+        //     memoryDelete.delete(i, true, 'attacker');
+        //   }
+        //   roleAttacker.run(attacker, 'W58S25');
+        // }
         // 执行建筑的run函数
         for (let name in Game.structures) {
             let structure = Game.structures[name];

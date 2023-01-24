@@ -43,13 +43,6 @@ export const tasks = {
     }
     return false;
   },
-
-  output: function() {
-    for (let i = 0; i < tasks.transfer.length; ++i) {
-      console.log(tasks.transfer[i].type,tasks.transfer[i].id,tasks.transfer[i].energy);
-      console.log('....................');
-    }
-  },
 }
 
 function findWithdraw(room: RoomMemory): void {

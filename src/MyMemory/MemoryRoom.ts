@@ -3,6 +3,9 @@ export const memoryRoom = {
   refresh: function(): void {
     Memory.rooms = {};
     for(let name in Game.rooms) {
+      if (Game.rooms[name].controller.owner.username != 'LazyKitty') {
+        continue;
+      }
       let structures = Game.rooms[name].find(FIND_STRUCTURES);
       Memory.rooms[name] = {
         // Id<Source>[]
